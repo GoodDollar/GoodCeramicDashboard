@@ -1,0 +1,5 @@
+.cache
+.tmp
+var
+build
+**/node_modules/**
