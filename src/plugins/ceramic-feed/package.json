@@ -1,0 +1,24 @@
+{
+  "name": "ceramic-feed",
+  "version": "0.0.0",
+  "description": "Exports blog posts to the Ceramic network.",
+  "strapi": {
+    "name": "Ceramic Feed",
+    "description": "Exports blog posts to the Ceramic network.",
+    "kind": "plugin"
+  },
+  "dependencies": {},
+  "author": {
+    "name": "GoodDollar"
+  },
+  "maintainers": [
+    {
+      "name": "GoodDollar"
+    }
+  ],
+  "engines": {
+    "node": ">=12.x.x <=16.x.x",
+    "npm": ">=6.0.0"
+  },
+  "license": "MIT"
+}
