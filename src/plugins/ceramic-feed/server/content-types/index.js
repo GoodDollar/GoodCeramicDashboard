@@ -1,3 +1,7 @@
 'use strict';
 
-module.exports = {};
+const CeramicPost = require('./ceramic-post');
+
+module.exports = {
+  'ceramic-post': { schema: CeramicPost },
+};
