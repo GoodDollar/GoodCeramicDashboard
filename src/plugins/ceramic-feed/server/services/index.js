@@ -1,3 +1,7 @@
 'use strict';
 
-module.exports = {};
+const ceramicClient = require('./ceramicClient');
+
+module.exports = {
+  ceramicClient
+};

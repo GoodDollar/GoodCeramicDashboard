@@ -10,7 +10,7 @@ module.exports = {
   }),
   validator({ direct, ...config }) {
     const optionsMap = {
-      true: ['ceramicRESTApiURL'],
+      true: ['ceramicRESTApiURL', 'ceramicRESTApiToken'],
       false: ['ceramicNodeURL', 'ceramicDIDSeed', 'pinataBaseUrl', 'pinataApiKey', 'pinataSecret', 'ipfsGateways']
     }
 
