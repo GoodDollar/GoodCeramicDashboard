@@ -1,10 +1,14 @@
+const { keys, get } = require('lodash')
+
 class CeramicClient {
   strapi = null
   config = null
+  mediaFields = null
 
-  constructor(strapi, config) {
+  constructor(strapi, config, attributes) {
     this.strapi = strapi
     this.config = config
+    this.mediaFields = keys(attributes).filter(field => 'media' === get(attributes, `${field}.type`))
   }
 
   async create(payload) {
