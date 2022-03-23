@@ -1,5 +1,5 @@
 const { join } = require('path');
-const { keys, get, pick } = require('lodash');
+const { assign, keys, get, pick, mapValues } = require('lodash');
 const schema = require('./schema');
 
 const LifecycleHooks = new class {
@@ -7,6 +7,12 @@ const LifecycleHooks = new class {
     const { strapi } = this
 
     return strapi.service('plugin::ceramic-feed.ceramicClient')
+  }
+
+  get posts() {
+    const { db } = this.strapi
+
+    return db.query('plugin::ceramic-feed.ceramic-post')
   }
 
   constructor(strapi, attributes) {
@@ -17,76 +23,55 @@ const LifecycleHooks = new class {
     this.mediaFields = fields.filter(field => 'media' === get(attributes, `${field}.type`))
   }
 
-  async afterCreate({ params, result }) {
-    const { data } = params
-    const { ceramic, fields, mediaFields } = this
-    const payload = pick(data, fields)
+  async afterCreate(event) {
+    const { posts, ceramic } = this
+    const { result } = event
 
-    mediaFields.forEach(field => {
-      const { url } = result[field]
+    const where = pick(result, 'id')
+    const payload = this._processPayload(event)
+    const data = await ceramic.create(payload)
+      .then(({ id }) => ({ cid: id }))
 
-      payload[field] = this._publicPath(url)
-    })
-
-    await Promise.all(mediaFields.map(async field => {
-      const filePath = await this._filePath(payload[field])
-
-      payload[field] = filePath
-    }))
-
-    const { id } = await ceramic.create(payload)
-
-    data.cid = id
-
-	await strapi.db.query('plugin::ceramic-feed.ceramic-post').update({ 
-		where: { id: result.id },
-		data: { cid: id }
-	  }
-	)
+	  await posts.update({ where, data })
+    assign(result, data)
   }
 
-  async afterUpdate({ params, result }) {
-    const { data } = params
-    const { ceramic, fields, mediaFields } = this
-    const payload = pick(data, fields)
-
-    mediaFields.forEach(field => {
-      const { url } = result[field]
-
-      payload[field] = this._publicPath(url)
-    })
-
-    await ceramic.update(data.cid, payload)
-  }
-
-  async afterDelete({ result }) {
+  async afterUpdate(event) {
     const { ceramic } = this
+    const { cid } = event.result
+    const payload = this._processPayload(event)
 
-    await ceramic.delete(result.cid)
+    await ceramic.update(cid, payload)
+  }
+
+  async afterDelete(event) {
+    const { ceramic } = this
+    const { cid } = event.result
+
+    await ceramic.delete(cid)
   }
 
   /** @private */
-  _publicPath(path) {
-    const { dirs } = this.strapi
+  _processPayload({ params, result }) {
+    const { fields, mediaFields, strapi } = this
+    const { data } = params
+    const { dirs } = strapi
 
-    return join(dirs.public, path)
-  }
+    return mapValues(pick(data, fields), (value, field) => {
+      if (mediaFields.includes(field)) {
+        const { url } = result[field]
 
-  /** @private */
-  async _filePath(id) {
-    const { entityService } = this.strapi
+        return join(dirs.public, url)
+      }
 
-    const { url } = await entityService.findOne('plugin::upload.file', id, {
-      fields: ['url'],
+      return value
     })
-
-    return this._publicPath(url)
   }
 }(strapi, schema.attributes)
 
 module.exports = {
-  async beforeCreate(event) {
-    return LifecycleHooks.beforeCreate(event)
+  async afterCreate(event) {
+    return LifecycleHooks.afterCreate(event)
   },
 
   async afterUpdate(event) {
