@@ -17,10 +17,16 @@ const LifecycleHooks = new class {
     this.mediaFields = fields.filter(field => 'media' === get(attributes, `${field}.type`))
   }
 
-  async beforeCreate({ params }) {
+  async afterCreate({ params, result }) {
     const { data } = params
     const { ceramic, fields, mediaFields } = this
     const payload = pick(data, fields)
+
+    mediaFields.forEach(field => {
+      const { url } = result[field]
+
+      payload[field] = this._publicPath(url)
+    })
 
     await Promise.all(mediaFields.map(async field => {
       const filePath = await this._filePath(payload[field])
@@ -31,6 +37,12 @@ const LifecycleHooks = new class {
     const { id } = await ceramic.create(payload)
 
     data.cid = id
+
+	await strapi.db.query('plugin::ceramic-feed.ceramic-post').update({ 
+		where: { id: result.id },
+		data: { cid: id }
+	  }
+	)
   }
 
   async afterUpdate({ params, result }) {
