@@ -1,5 +1,5 @@
 const { join } = require('path');
-const { keys, get, pick } = require('lodash');
+const { keys, get, pick, map } = require('lodash');
 const schema = require('./schema');
 
 const LifecycleHooks = new class {
@@ -7,6 +7,18 @@ const LifecycleHooks = new class {
     const { strapi } = this
 
     return strapi.service('plugin::ceramic-feed.ceramicClient')
+  }
+
+  get posts() {
+    const { db } = this.strapi
+
+    return db.query('plugin::ceramic-feed.ceramic-post')
+  }
+
+  get assets() {
+    const { db } = this.strapi
+
+    return db.query('plugin::upload.file')
   }
 
   constructor(strapi, attributes) {
@@ -47,10 +59,26 @@ const LifecycleHooks = new class {
     await ceramic.update(data.cid, payload)
   }
 
-  async afterDelete({ result }) {
+  async afterDelete({ result, params }) {
     const { ceramic } = this
 
+    if ('$and' in params.where) {
+      // skip on bulk remove
+      return
+    }
+
     await ceramic.delete(result.cid)
+  }
+
+  async beforeDeleteMany({ params }) {
+    const { ceramic, posts } = this
+    const { where } = params
+
+    const ids = await posts
+      .findMany({ select: ['cid'], where })
+      .then(records => map(records, 'cid'))
+
+    await Promise.all(ids, async id => ceramic.delete(id))
   }
 
   /** @private */
@@ -62,10 +90,9 @@ const LifecycleHooks = new class {
 
   /** @private */
   async _filePath(id) {
-    const { entityService } = this.strapi
-
-    const { url } = await entityService.findOne('plugin::upload.file', id, {
-      fields: ['url'],
+    const { url } = await this.assets.findOne({
+      select: ['url'],
+      where: { id },
     })
 
     return this._publicPath(url)
@@ -83,5 +110,9 @@ module.exports = {
 
   async afterDelete(event) {
     return LifecycleHooks.afterDelete(event)
+  },
+
+  async beforeDeleteMany(event) {
+    return LifecycleHooks.beforeDeleteMany(event)
   }
 }
