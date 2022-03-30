@@ -37,6 +37,48 @@ module.exports = async ({ strapi }) => {
           sortable: true
         }
       },
+      sponsored_link: {
+        edit: {
+          label: 'Sponsored Logo',
+          description: '',
+          placeholder: '',
+          visible: true,
+          editable: true
+        },
+        list: {
+          label: 'Sponsored Logo',
+          searchable: true,
+          sortable: true
+        }
+      },
+      sponsored_logo: {
+        edit: {
+          label: 'Sponsored Logo',
+          description: '',
+          placeholder: '',
+          visible: true,
+          editable: true
+        },
+        list: {
+          label: 'Sponsored Logo',
+          searchable: true,
+          sortable: true
+        }
+      },
+      link: {
+        edit: {
+          label: 'Link',
+          description: '',
+          placeholder: '',
+          visible: true,
+          editable: true
+        },
+        list: {
+          label: 'Link',
+          searchable: true,
+          sortable: true
+        }
+      },
       content: {
         edit: {
           label: 'content',
@@ -114,6 +156,18 @@ module.exports = async ({ strapi }) => {
           name: 'title',
           size: 8
         }, {
+          name: 'link',
+          size: 8
+        },
+				{
+					name: 'sponsored_link',
+					size: 8
+				},
+				{
+					name: 'sponsored_logo',
+					size: 8
+				},
+				{
           name: 'cid',
           size: 4
         }],
@@ -127,7 +181,7 @@ module.exports = async ({ strapi }) => {
         }]
       ],
       editRelations: [],
-      list: ['id', 'title', 'picture', 'cid']
+      list: ['id', 'title', 'sponsored_link', 'sponsored_logo', 'link', 'picture', 'cid']
     }
   }
 

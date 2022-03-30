@@ -29,12 +29,27 @@ module.exports = {
     picture: {
       type: 'media',
       multiple: false,
-      required: true,
+      required: false,
       configurable: false,
       allowedTypes: [
         'images'
       ]
     },
+    sponsored_link: {
+			type: 'string',
+      required: false,
+      configurable: false,
+		},
+    sponsored_logo: {
+			type: 'string',
+      required: false,
+      configurable: false,
+		},
+    link: {
+			type: 'string',
+      required: true,
+      configurable: false,
+		},
     cid: {
       type: 'string',
       private: true,
