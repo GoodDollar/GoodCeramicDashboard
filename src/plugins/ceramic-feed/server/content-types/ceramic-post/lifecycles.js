@@ -1,5 +1,5 @@
 const { join } = require('path');
-const { assign, keys, get, pick, map, filter } = require('lodash');
+const { assign, pick, map, filter, mapValues } = require('lodash');
 
 const { metadata, array } = require('../../utils')
 const schema = require('./schema');
@@ -24,21 +24,54 @@ const LifecycleHooks = new class {
     assign(this, { strapi, fields, mediaFields })
   }
 
-  async afterUpdate({ params, result }) {
-    const { data } = params
-    const { ceramic, fields, mediaFields } = this
-    const payload = pick(data, fields)
+  async onPublish({ result }) {
+    const { ceramic, posts } = this
+    const { cid, publishedAt } = result
 
-    mediaFields.forEach(field => {
-      const { url } = result[field]
+    const payload = {
+      ...this._readPayload(result),
+      published: publishedAt
+    }
 
-      payload[field] = this._publicPath(url)
-    })
+    if (cid) {
+      await ceramic.updateAndPublish(cid, payload)
+      return 
+    }
 
-    await ceramic.update(data.cid, payload)
+    const document = await ceramic.createAndPublish(payload)
+    const data = { cid: String(document.id) }
+    const where = pick(result, 'id')
+    
+    assign(result, data)
+    await posts.update({ where, data })
   }
 
-  async afterDelete({ result, params }) {
+  async onUpdate(event) {
+    const { ceramic } = this
+    const { params, result } = event
+    const { publishedAt, cid } = result
+    const { data, where } = params
+
+    if (('cid' in data) && ('id' in where)) {
+      return
+    }
+    
+    if ('publishedAt' in data) {
+      if (data.publishedAt) {
+        return this.onPublish(event)
+      }
+
+      return this.onUnpublish(event)
+    }
+
+    if (publishedAt && cid) {
+      const payload = this._readPayload(result)
+
+      await ceramic.updateAndPublish(cid, payload)
+    }
+  }
+
+  async onUnpublish({ result, params }) {
     const { ceramic } = this
 
     if ('$and' in params.where) {
@@ -53,7 +86,7 @@ const LifecycleHooks = new class {
     }
   }
 
-  async beforeDeleteMany({ params }) {
+  async onUnpublishMany({ params }) {
     const { ceramic, posts } = this
     const { where } = params
 
@@ -65,24 +98,32 @@ const LifecycleHooks = new class {
   }
 
   /** @private */
-  _publicPath(path) {
-    const { dirs } = this.strapi
+  _readPayload(result) {
+    const { fields, mediaFields, strapi } = this
+    const { dirs } = strapi
+    
+    return mapValues(pick(result, fields), (value, field) => {
+      if (mediaFields.includes(field)) {
+        const { url } = value
 
-    return join(dirs.public, path)
+        return join(dirs.public, url)
+      }
+
+      return value
+    })
   }
 }(strapi, schema)
 
 module.exports = {
   async afterUpdate(event) {
-    console.log('afterUpdate', event)
-    //return LifecycleHooks.afterUpdate(event)
+    return LifecycleHooks.onUpdate(event)
   },
 
   async afterDelete(event) {
-    return LifecycleHooks.afterDelete(event)
+    return LifecycleHooks.onUnpublish(event)
   },
 
   async beforeDeleteMany(event) {
-    return LifecycleHooks.beforeDeleteMany(event)
+    return LifecycleHooks.onUnpublishMany(event)
   }
 }
