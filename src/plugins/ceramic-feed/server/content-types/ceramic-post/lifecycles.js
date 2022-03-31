@@ -1,5 +1,7 @@
 const { join } = require('path');
-const { keys, get, pick, map } = require('lodash');
+const { keys, get, pick, map, filter } = require('lodash');
+
+const { metadata, array } = require('../../utils')
 const schema = require('./schema');
 
 const LifecycleHooks = new class {
@@ -15,34 +17,11 @@ const LifecycleHooks = new class {
     return db.query('plugin::ceramic-feed.ceramic-post')
   }
 
-  get assets() {
-    const { db } = this.strapi
+  constructor(strapi, schema) {
+    let { fields, mediaFields } = metadata.getFieldsNames(schema)
+    fields = array.remove(fields, 'cid')
 
-    return db.query('plugin::upload.file')
-  }
-
-  constructor(strapi, attributes) {
-    const fields = keys(attributes).filter(field => 'cid' !== field)
-
-    this.strapi = strapi
-    this.fields = fields
-    this.mediaFields = fields.filter(field => 'media' === get(attributes, `${field}.type`))
-  }
-
-  async beforeCreate({ params }) {
-    const { data } = params
-    const { ceramic, fields, mediaFields } = this
-    const payload = pick(data, fields)
-
-    await Promise.all(mediaFields.map(async field => {
-      const filePath = await this._filePath(payload[field])
-
-      payload[field] = filePath
-    }))
-
-    const { id } = await ceramic.create(payload)
-
-    data.cid = id
+    assign(this, { strapi, fields, mediaFields })
   }
 
   async afterUpdate({ params, result }) {
@@ -67,7 +46,11 @@ const LifecycleHooks = new class {
       return
     }
 
-    await ceramic.delete(result.cid)
+    const { cid } = result
+
+    if (cid) {
+      await ceramic.unpublish(cid)
+    }
   }
 
   async beforeDeleteMany({ params }) {
@@ -78,7 +61,7 @@ const LifecycleHooks = new class {
       .findMany({ select: ['cid'], where })
       .then(records => map(records, 'cid'))
 
-    await Promise.all(ids, async id => ceramic.delete(id))
+    await Promise.all(filter(ids), async id => ceramic.unpublish(id))
   }
 
   /** @private */
@@ -87,25 +70,12 @@ const LifecycleHooks = new class {
 
     return join(dirs.public, path)
   }
-
-  /** @private */
-  async _filePath(id) {
-    const { url } = await this.assets.findOne({
-      select: ['url'],
-      where: { id },
-    })
-
-    return this._publicPath(url)
-  }
-}(strapi, schema.attributes)
+}(strapi, schema)
 
 module.exports = {
-  async beforeCreate(event) {
-    return LifecycleHooks.beforeCreate(event)
-  },
-
   async afterUpdate(event) {
-    return LifecycleHooks.afterUpdate(event)
+    console.log('afterUpdate', event)
+    //return LifecycleHooks.afterUpdate(event)
   },
 
   async afterDelete(event) {
