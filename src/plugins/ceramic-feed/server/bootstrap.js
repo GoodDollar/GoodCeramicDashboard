@@ -12,7 +12,7 @@ module.exports = async ({ strapi }) => {
       pageSize: 10,
       mainField: 'title',
       defaultSortBy: 'title',
-      defaultSortOrder: 'ASC'
+      defaultSortOrder: 'ASC',
     },
     metadatas: {
       id: {
@@ -20,8 +20,8 @@ module.exports = async ({ strapi }) => {
         list: {
           label: 'id',
           searchable: true,
-          sortable: true
-        }
+          sortable: true,
+        },
       },
       title: {
         edit: {
@@ -29,41 +29,27 @@ module.exports = async ({ strapi }) => {
           description: '',
           placeholder: '',
           visible: true,
-          editable: true
+          editable: true,
         },
         list: {
           label: 'title',
           searchable: true,
-          sortable: true
-        }
+          sortable: true,
+        },
       },
-      sponsored_link: {
+      sponsoredLink: {
         edit: {
-          label: 'Sponsored Logo',
+          label: 'Sponsored Link',
           description: '',
           placeholder: '',
           visible: true,
-          editable: true
+          editable: true,
         },
         list: {
-          label: 'Sponsored Logo',
+          label: 'Sponsored Link',
           searchable: true,
-          sortable: true
-        }
-      },
-      sponsored_logo: {
-        edit: {
-          label: 'Sponsored Logo',
-          description: '',
-          placeholder: '',
-          visible: true,
-          editable: true
+          sortable: true,
         },
-        list: {
-          label: 'Sponsored Logo',
-          searchable: true,
-          sortable: true
-        }
       },
       link: {
         edit: {
@@ -71,13 +57,13 @@ module.exports = async ({ strapi }) => {
           description: '',
           placeholder: '',
           visible: true,
-          editable: true
+          editable: true,
         },
         list: {
           label: 'Link',
           searchable: true,
-          sortable: true
-        }
+          sortable: true,
+        },
       },
       content: {
         edit: {
@@ -85,27 +71,41 @@ module.exports = async ({ strapi }) => {
           description: '',
           placeholder: '',
           visible: true,
-          editable: true
+          editable: true,
         },
         list: {
           label: 'content',
           searchable: false,
-          sortable: false
-        }
+          sortable: false,
+        },
       },
       picture: {
         edit: {
-          label: 'picture',
+          label: 'content',
           description: '',
           placeholder: '',
           visible: true,
-          editable: true
+          editable: true,
         },
         list: {
           label: 'picture',
           searchable: false,
-          sortable: false
-        }
+          sortable: false,
+        },
+      },
+      sponsoredLogo: {
+        edit: {
+          label: 'Sponsored Logo',
+          description: '',
+          placeholder: '',
+          visible: true,
+          editable: true,
+        },
+        list: {
+          label: 'Sponsored Logo',
+          searchable: false,
+          sortable: false,
+        },
       },
       cid: {
         edit: {
@@ -113,13 +113,13 @@ module.exports = async ({ strapi }) => {
           description: '',
           placeholder: '',
           visible: true,
-          editable: false
+          editable: false,
         },
         list: {
           label: 'cid',
           searchable: true,
-          sortable: true
-        }
+          sortable: true,
+        },
       },
       createdAt: {
         edit: {
@@ -127,13 +127,13 @@ module.exports = async ({ strapi }) => {
           description: '',
           placeholder: '',
           visible: false,
-          editable: true
+          editable: true,
         },
         list: {
           label: 'createdAt',
           searchable: true,
-          sortable: true
-        }
+          sortable: true,
+        },
       },
       updatedAt: {
         edit: {
@@ -141,49 +141,66 @@ module.exports = async ({ strapi }) => {
           description: '',
           placeholder: '',
           visible: false,
-          editable: true
+          editable: true,
         },
         list: {
           label: 'updatedAt',
           searchable: true,
-          sortable: true
-        }
-      }
+          sortable: true,
+        },
+      },
     },
     layouts: {
       edit: [
-        [{
-          name: 'title',
-          size: 8
-        }, {
-          name: 'link',
-          size: 8
-        },
-				{
-					name: 'sponsored_link',
-					size: 8
-				},
-				{
-					name: 'sponsored_logo',
-					size: 8
-				},
-				{
-          name: 'cid',
-          size: 4
-        }],
-        [{
-          name: 'picture',
-          size: 12
-        }],
-        [{
-          name: 'content',
-          size: 12
-        }]
+        [
+          {
+            name: 'title',
+            size: 8,
+          },
+          {
+            name: 'cid',
+            size: 4,
+          },
+          {
+            name: 'link',
+            size: 8,
+          },
+          {
+            name: 'sponsoredLink',
+            size: 8,
+          },
+        ],
+        [
+          {
+            name: 'sponsoredLogo',
+            size: 12,
+          },
+        ],
+        [
+          {
+            name: 'picture',
+            size: 12,
+          },
+        ],
+        [
+          {
+            name: 'content',
+            size: 12,
+          },
+        ],
       ],
       editRelations: [],
-      list: ['id', 'title', 'sponsored_link', 'sponsored_logo', 'link', 'picture', 'cid']
-    }
-  }
+      list: [
+        'id',
+        'title',
+        'sponsoredLink',
+        'sponsoredLogo',
+        'link',
+        'picture',
+        'cid',
+      ],
+    },
+  };
 
   // bootstrap phase
   await strapi.db.query('strapi::core-store').update({

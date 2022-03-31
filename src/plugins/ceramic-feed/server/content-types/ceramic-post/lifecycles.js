@@ -34,7 +34,7 @@ const LifecycleHooks = new class {
     const { ceramic, fields, mediaFields } = this
     const payload = pick(data, fields)
 
-    await Promise.all(mediaFields.map(async field => {
+	await Promise.all(mediaFields.map(async field => {
       const filePath = await this._filePath(payload[field])
 
       payload[field] = filePath

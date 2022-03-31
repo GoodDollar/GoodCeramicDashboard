@@ -8,12 +8,12 @@ module.exports = {
     kind: 'collectionType',
   },
   options: {
-    draftAndPublish: false
+    draftAndPublish: false,
   },
   pluginOptions: {
     'content-type-builder': {
       visible: false,
-    }
+    },
   },
   attributes: {
     title: {
@@ -31,30 +31,30 @@ module.exports = {
       multiple: false,
       required: false,
       configurable: false,
-      allowedTypes: [
-        'images'
-      ]
+      allowedTypes: ['images'],
     },
-    sponsored_link: {
-			type: 'string',
+    sponsoredLink: {
+      type: 'string',
       required: false,
       configurable: false,
-		},
-    sponsored_logo: {
-			type: 'string',
+    },
+    sponsoredLogo: {
+      type: 'media',
+      multiple: false,
       required: false,
       configurable: false,
-		},
+      allowedTypes: ['images'],
+    },
     link: {
-			type: 'string',
+	  type: 'string',
       required: true,
       configurable: false,
-		},
+    },
     cid: {
       type: 'string',
       private: true,
       unique: true,
       configurable: false,
-    }
-  }
-}
+    },
+  },
+};
