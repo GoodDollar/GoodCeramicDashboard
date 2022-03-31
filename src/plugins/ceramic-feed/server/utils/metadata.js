@@ -1,3 +1,5 @@
+const { get } = require('lodash')
+
 module.exports = class {
   static getFieldsNames(schema) {
     const { attributes } = schema

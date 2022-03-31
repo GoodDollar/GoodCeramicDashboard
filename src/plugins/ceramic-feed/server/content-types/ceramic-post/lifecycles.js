@@ -1,5 +1,5 @@
 const { join } = require('path');
-const { keys, get, pick, map, filter } = require('lodash');
+const { assign, keys, get, pick, map, filter } = require('lodash');
 
 const { metadata, array } = require('../../utils')
 const schema = require('./schema');

@@ -1,6 +1,6 @@
 'use strict';
 
-const ceramic = require('./CeramicClient')
+const ceramic = require('./Ceramic')
 const ipfs = require('./Ipfs')
 
-module.exports = { ceramic, ipfsStorage };
+module.exports = { ceramic, ipfs };
