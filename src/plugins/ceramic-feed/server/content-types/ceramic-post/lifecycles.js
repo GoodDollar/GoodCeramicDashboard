@@ -1,12 +1,15 @@
 const { join } = require('path');
-const { keys, get, pick, map } = require('lodash');
+const { assign, pick, map, filter, mapValues } = require('lodash');
+
+const { metadata, array, object } = require('../../utils')
 const schema = require('./schema');
 
+const { hasOnlyKeys } = object
 const LifecycleHooks = new class {
   get ceramic() {
     const { strapi } = this
 
-    return strapi.service('plugin::ceramic-feed.ceramicClient')
+    return strapi.service('plugin::ceramic-feed.ceramic')
   }
 
   get posts() {
@@ -15,62 +18,103 @@ const LifecycleHooks = new class {
     return db.query('plugin::ceramic-feed.ceramic-post')
   }
 
-  get assets() {
-    const { db } = this.strapi
+  constructor(strapi, schema) {
+    let { fields, mediaFields } = metadata.getFieldsNames(schema)
+    fields = array.remove(fields, 'cid')
 
-    return db.query('plugin::upload.file')
+    assign(this, { strapi, fields, mediaFields })
   }
 
-  constructor(strapi, attributes) {
-    const fields = keys(attributes).filter(field => 'cid' !== field)
+  async onPublish({ result }) {
+    const { ceramic, posts } = this
+    const { cid, publishedAt } = result
 
-    this.strapi = strapi
-    this.fields = fields
-    this.mediaFields = fields.filter(field => 'media' === get(attributes, `${field}.type`))
+    // on publish we have to pre-fill
+    // or update 'published' date field
+    const payload = {
+      ...this._readPayload(result),
+      published: publishedAt
+    }
+
+    // if Ceramic ID was set - update doc (with latest data)
+    // and publish (by writing 'updated' event to the changelog)
+    if (cid) {
+      await ceramic.updateAndPublish(cid, payload)
+      return
+    }
+
+    // if no Ceramic ID in document - create document
+    // and write 'added' event to the changelog
+    const document = await ceramic.createAndPublish(payload)
+    const data = { cid: String(document.id) }
+    const where = pick(result, 'id')
+
+    // prefill result with Ceramic ID newly generated
+    assign(result, data)
+    // update post record with Ceramic IDs
+    await posts.update({ where, data })
   }
 
-  async beforeCreate({ params }) {
-    const { data } = params
-    const { ceramic, fields, mediaFields } = this
-    const payload = pick(data, fields)
+  async onUpdate(event) {
+    const { ceramic } = this
+    const { params, result } = event
+    const { publishedAt, cid } = result
+    const { data, where } = params
 
-    await Promise.all(mediaFields.map(async field => {
-      const filePath = await this._filePath(payload[field])
+    // id update payload have only 'cid' and 'updatedAt'
+    // fields - this is the update query from onPublish()
+    if (hasOnlyKeys(data, 'cid', 'updatedAt') && hasOnlyKeys(where, 'id')) {
+      // if setting ceramic id on first publish - do nothing
+      return
+    }
 
-      payload[field] = filePath
-    }))
+    // if 'publishedAt' present in update PAYLOAD - publish or unpublish
+    // button was pressed, there's no other cases where this field
+    // could be presented in payload
+    if ('publishedAt' in data) {
+      // if publishedAt is set - publishing document
+      if (data.publishedAt) {
+        return this.onPublish(event)
+      }
 
-    const { id } = await ceramic.create(payload)
+      // if publishedAt is null - unpublishing it
+      return this.onUnpublish(event)
+    }
 
-    data.cid = id
+    // if 'publishedAt' present in DOCUMENT (but absent in UPDATE PAYLOAD) that means
+    // the published document was updated and nees to be also updated in Ceramic
+    // before update we're checking is Ceramic ID is set
+    if (publishedAt && cid) {
+      const payload = this._readPayload(result)
+
+      await ceramic.updateAndPublish(cid, payload)
+    }
+
+    // if no 'publishedAt' present in DOCUMENT then means the DRAFT was updated we're skipping
+    // updating of the drafts in Ceramic. they will be updated on the next re-publish
   }
 
-  async afterUpdate({ params, result }) {
-    const { data } = params
-    const { ceramic, fields, mediaFields } = this
-    const payload = pick(data, fields)
-
-    mediaFields.forEach(field => {
-      const { url } = result[field]
-
-      payload[field] = this._publicPath(url)
-    })
-
-    await ceramic.update(data.cid, payload)
-  }
-
-  async afterDelete({ result, params }) {
+  async onUnpublish({ result, params }) {
     const { ceramic } = this
 
+    // afterDelete triggers once also at bulk remove
+    // with specific where condition we could check for
     if ('$and' in params.where) {
       // skip on bulk remove
       return
     }
 
-    await ceramic.delete(result.cid)
+    // if non-bulk remove - getting ceramic
+    // ID and unpublishing document
+    const { cid } = result
+
+    // do not try to remove the document wasn't published
+    if (cid) {
+      await ceramic.unpublish(cid)
+    }
   }
 
-  async beforeDeleteMany({ params }) {
+  async onUnpublishMany({ params }) {
     const { ceramic, posts } = this
     const { where } = params
 
@@ -78,41 +122,48 @@ const LifecycleHooks = new class {
       .findMany({ select: ['cid'], where })
       .then(records => map(records, 'cid'))
 
-    await Promise.all(ids, async id => ceramic.delete(id))
+    await Promise.all(filter(ids).map(async id => ceramic.unpublish(id)))
   }
 
-  /** @private */
-  _publicPath(path) {
-    const { dirs } = this.strapi
+  /**
+   * @private
+   * Reads payload and picks uploaded files paths up
+   */
+  _readPayload(result) {
+    const { fields, mediaFields, strapi } = this
+    const { dirs } = strapi
 
-    return join(dirs.public, path)
-  }
+    // iterate over fiels
+    return mapValues(pick(result, fields), (value, field) => {
+      // if field is media (e.g. file upload)
+      if (mediaFields.includes(field)) {
+        // its value is object having 'url' prop
+        const { url } = value
 
-  /** @private */
-  async _filePath(id) {
-    const { url } = await this.assets.findOne({
-      select: ['url'],
-      where: { id },
+        // url is path relative to the public dir
+        // building full path and mapping value with it
+        return join(dirs.public, url)
+      }
+
+      // non-media fields are mapped with own raw values
+      return value
     })
-
-    return this._publicPath(url)
   }
-}(strapi, schema.attributes)
+}(strapi, schema)
 
 module.exports = {
-  async beforeCreate(event) {
-    return LifecycleHooks.beforeCreate(event)
-  },
-
   async afterUpdate(event) {
-    return LifecycleHooks.afterUpdate(event)
+    return LifecycleHooks.onUpdate(event)
   },
 
+  // we still need to listen for delete events
+  // because physical removal should also unpublish
+  // documents from Ceramic Network
   async afterDelete(event) {
-    return LifecycleHooks.afterDelete(event)
+    return LifecycleHooks.onUnpublish(event)
   },
 
   async beforeDeleteMany(event) {
-    return LifecycleHooks.beforeDeleteMany(event)
+    return LifecycleHooks.onUnpublishMany(event)
   }
 }
