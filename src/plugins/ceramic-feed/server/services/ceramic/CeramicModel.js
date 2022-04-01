@@ -12,6 +12,7 @@ class CeramicModel {
     return TileDocument.load(this.ceramic, id)
   }
 
+  /** Checks is document published (by checking the index doc) */
   static async published(id) {
     const { content } = await this.getIndex()
     const documentId = String(id)
@@ -19,6 +20,7 @@ class CeramicModel {
     return get(content, 'items', []).includes(documentId)
   }
 
+  /** Creates new Ceramic document */
   static async create(content, tags = []) {
     const metadata = this._createMetadata(tags)
     const newDocument = await TileDocument.create(this.ceramic, content, metadata)
@@ -26,6 +28,7 @@ class CeramicModel {
     return newDocument
   }
 
+  /** Creates new Ceramic document and publishes in to the index */
   static async createAndPublish(content, tags = []) {
     const document = await this.create(content, tags)
 
@@ -33,6 +36,7 @@ class CeramicModel {
     return document
   }
 
+  /** Updates Ceramic document */
   static async update(document, content, tags = []) {
     const updatedContent = { ...document.content, ...content }
     const metadata = this._createMetadata(tags)
@@ -41,20 +45,26 @@ class CeramicModel {
     return document
   }
 
+  /** Updates Ceramic document and re-publishes it to the index */
   static async updateAndPublish(document, content, tags = []) {
+    // check is published
     const isPublished = await this.published(document.id)
 
+    // update the document itself
     await this.update(document, content, tags)
 
     if (isPublished) {
+      // if was - published - write update event to the changelog
       this.publishUpdate(document)
     } else {
+      // otherwise - republish (and write added event)
       this.publish(document)
     }
 
     return document
   }
 
+  /** Publishes document to the index and writes added event to the changelog */
   static async publish(document) {
     const id = String(document.id)
 
@@ -62,12 +72,14 @@ class CeramicModel {
     await this._updateLiveIndexes(id, 'added')
   }
 
+  /** Writes update event to the changelog */
   static async publishUpdate(document) {
     const id = String(document.id)
 
     await this._updateLiveIndexes(id, 'updated')
   }
 
+  /** Unpublishes (removes) document form the index and writes removed event to the changelog */
   static async unpublish(id) {
     const documentId = String(id)
     const isPublished = await this.ensureExists(id)

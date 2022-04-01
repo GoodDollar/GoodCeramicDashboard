@@ -35,6 +35,9 @@ module.exports = {
         'images'
       ]
     },
+    // reference to the ceramic document ID
+    // once doc physically created it kept in Ceramic forever
+    // to publish/unpublish we're updating index doc
     cid: {
       type: 'string',
       private: true,
