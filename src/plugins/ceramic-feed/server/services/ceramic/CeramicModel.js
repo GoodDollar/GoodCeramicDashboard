@@ -82,7 +82,7 @@ class CeramicModel {
   /** Unpublishes (removes) document form the index and writes removed event to the changelog */
   static async unpublish(id) {
     const documentId = String(id)
-    const isPublished = await this.ensureExists(id)
+    const isPublished = await this.published(id)
 
     if (!isPublished) {
       return

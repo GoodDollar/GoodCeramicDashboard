@@ -1,14 +1,15 @@
 const { join } = require('path');
 const { assign, pick, map, filter, mapValues } = require('lodash');
 
-const { metadata, array } = require('../../utils')
+const { metadata, array, object } = require('../../utils')
 const schema = require('./schema');
 
+const { hasOnlyKeys } = object
 const LifecycleHooks = new class {
   get ceramic() {
     const { strapi } = this
 
-    return strapi.service('plugin::ceramic-feed.ceramicClient')
+    return strapi.service('plugin::ceramic-feed.ceramic')
   }
 
   get posts() {
@@ -60,11 +61,9 @@ const LifecycleHooks = new class {
     const { publishedAt, cid } = result
     const { data, where } = params
 
-    // id update payload have 'cid' field - this
-    // is the update query from onPublish()
-    // The Ceramic ID field isn't editable so
-    // there's no other way to update id
-    if (('cid' in data) && ('id' in where)) {
+    // id update payload have only 'cid' and 'updatedAt'
+    // fields - this is the update query from onPublish()
+    if (hasOnlyKeys(data, 'cid', 'updatedAt') && hasOnlyKeys(where, 'id')) {
       // if setting ceramic id on first publish - do nothing
       return
     }
@@ -123,7 +122,7 @@ const LifecycleHooks = new class {
       .findMany({ select: ['cid'], where })
       .then(records => map(records, 'cid'))
 
-    await Promise.all(filter(ids), async id => ceramic.unpublish(id))
+    await Promise.all(filter(ids).map(async id => ceramic.unpublish(id)))
   }
 
   /**
