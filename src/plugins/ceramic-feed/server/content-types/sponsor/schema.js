@@ -15,7 +15,7 @@ module.exports = {
 	  Logo: {
 		type: "media",
 		multiple: true,
-		required: true,
+		required: false,
 		allowedTypes: [
 		  "images"
 		]

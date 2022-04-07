@@ -40,8 +40,8 @@ module.exports = {
 		repeatable: true,
 		relation: 'manyToOne',
 		component: 'ceramic-post.sponsor',
-	  }
-	}
+	  },
+	},
 
     // reference to the ceramic document ID
     // once doc physically created it kept in Ceramic forever
