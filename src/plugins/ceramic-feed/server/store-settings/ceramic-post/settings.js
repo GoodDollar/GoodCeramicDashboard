@@ -60,6 +60,20 @@ module.exports = {
         sortable: false
       }
     },
+    sponsor: {
+      edit: {
+        label: 'sponsor',
+        description: '',
+        placeholder: '',
+        visible: true,
+        editable: true
+      },
+      list: {
+        label: 'sponsor',
+        searchable: false,
+        sortable: false
+      }
+    },
     cid: {
       edit: {
         label: 'cid',
@@ -119,9 +133,13 @@ module.exports = {
       [{
         name: 'content',
         size: 12
+      }],
+      [{
+        name: 'sponsor',
+        size: 12
       }]
     ],
     editRelations: [],
-    list: ['id', 'title', 'picture', 'cid']
+    list: ['id', 'title', 'sponsor', 'picture', 'cid']
   }
 }
