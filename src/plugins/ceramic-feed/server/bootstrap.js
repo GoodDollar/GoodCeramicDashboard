@@ -37,20 +37,6 @@ module.exports = async ({ strapi }) => {
           sortable: true,
         },
       },
-      sponsoredLink: {
-        edit: {
-          label: 'Sponsored Link',
-          description: '',
-          placeholder: '',
-          visible: true,
-          editable: true,
-        },
-        list: {
-          label: 'Sponsored Link',
-          searchable: true,
-          sortable: true,
-        },
-      },
       link: {
         edit: {
           label: 'Link',
@@ -86,23 +72,10 @@ module.exports = async ({ strapi }) => {
           placeholder: '',
           visible: true,
           editable: true,
+          required: true,
         },
         list: {
           label: 'picture',
-          searchable: false,
-          sortable: false,
-        },
-      },
-      sponsoredLogo: {
-        edit: {
-          label: 'Sponsored Logo',
-          description: '',
-          placeholder: '',
-          visible: true,
-          editable: true,
-        },
-        list: {
-          label: 'Sponsored Logo',
           searchable: false,
           sortable: false,
         },
@@ -166,14 +139,8 @@ module.exports = async ({ strapi }) => {
             size: 8,
           },
           {
-            name: 'sponsoredLink',
+            name: 'sponsor',
             size: 8,
-          },
-        ],
-        [
-          {
-            name: 'sponsoredLogo',
-            size: 12,
           },
         ],
         [
@@ -193,8 +160,7 @@ module.exports = async ({ strapi }) => {
       list: [
         'id',
         'title',
-        'sponsoredLink',
-        'sponsoredLogo',
+        'sponsor',
         'link',
         'picture',
         'cid',
