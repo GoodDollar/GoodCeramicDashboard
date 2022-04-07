@@ -36,11 +36,11 @@ module.exports = {
       ]
     },
 	sponsor: {
-		type: 'component',
-		repeatable: true,
-		relation: 'manyToOne',
-		component: 'ceramic-post.sponsor',
-	  },
+		type: "relation",
+		relation: "oneToMany",
+		target: "plugin::ceramic-feed.sponsor",
+		mappedBy: "ceramic_feed_post"
+	  }
 	},
 
     // reference to the ceramic document ID

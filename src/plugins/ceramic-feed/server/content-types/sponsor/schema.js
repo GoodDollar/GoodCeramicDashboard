@@ -19,6 +19,12 @@ module.exports = {
 		allowedTypes: [
 		  "images"
 		]
+	  },
+	  ceramic_feed_post: {
+		type: "relation",
+		relation: "manyToOne",
+		target: "plugin::ceramic-feed.ceramic-post",
+		inversedBy: "sponsor"
 	  }
 	}
   }
