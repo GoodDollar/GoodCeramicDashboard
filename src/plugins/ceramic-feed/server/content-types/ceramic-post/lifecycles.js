@@ -1,7 +1,9 @@
-const { assign, pick, map, filter } = require('lodash');
-
+const { assign, pick, map, mapValues, mapKeys, filter, fromPairs } = require('lodash')
 const { metadata, array, object } = require('../../utils')
+const { withArray } = require('../../utils/async')
+
 const schema = require('./schema');
+const sponsorSchema = require('../sponsor/schema');
 
 const { hasOnlyKeys } = object
 const { resolveMediaFieldsPaths } = metadata
@@ -19,11 +21,18 @@ const LifecycleHooks = new class {
     return db.query('plugin::ceramic-feed.ceramic-post')
   }
 
-  constructor(strapi, schema) {
-    let { fields, mediaFields } = metadata.getFieldsNames(schema)
-    fields = array.remove(fields, 'cid')
+  get entityService() {
+    const { entityService } = this.strapi
 
-    assign(this, { strapi, fields, mediaFields })
+    return entityService
+  }
+
+  constructor(strapi, mainSchema, relatedSchemas) {
+    const { _readSchema } = this
+    const schema = _readSchema(mainSchema)
+    const schemas = mapValues(relatedSchemas, _readSchema)
+
+    assign(this, { strapi, schema, schemas })
   }
 
   async onPublish({ result }) {
@@ -32,10 +41,8 @@ const LifecycleHooks = new class {
 
     // on publish we have to pre-fill
     // or update 'published' date field
-    const payload = {
-      ...this._readPayload(result),
-      published: publishedAt
-    }
+    const payload = await this._readPayload(result)
+      .then(data => ({ ...data, published: publishedAt }))
 
     // if Ceramic ID was set - update doc (with latest data)
     // and publish (by writing 'updated' event to the changelog)
@@ -86,7 +93,7 @@ const LifecycleHooks = new class {
     // the published document was updated and nees to be also updated in Ceramic
     // before update we're checking is Ceramic ID is set
     if (publishedAt && cid) {
-      const payload = this._readPayload(result)
+      const payload = await this._readPayload(result)
 
       await ceramic.updateAndPublish(cid, payload)
     }
@@ -126,24 +133,60 @@ const LifecycleHooks = new class {
     await Promise.all(filter(ids).map(async id => ceramic.unpublish(id)))
   }
 
+  /** @private */
+  _readSchema(schema, schemaName = null) {
+    const schemaMeta = metadata.getFieldsNames(schema)
+    const { fields, mediaFields } = schemaMeta
+
+    if (schemaName) {
+      return { fields, mediaFields }
+    }
+
+    return { ...schemaMeta, fields: array.remove(fields, 'cid') }
+  }
+
   /**
    * @private
    * Reads payload and picks uploaded files paths up
    */
-  _readPayload(result) {
-    const { fields, mediaFields } = this
-    const payload = pick(result, fields)
+  async _readPayload(entity, schemaName = null) {
+    const { schema, schemas } = this
+    const entitySchema = schemaName ? schemas[schemaName] : schema
+    const { fields, mediaFields, relationFields } = entitySchema
+    const payload = pick(entity, schema, fields)
 
-    return {
-      ...payload,
-      ...resolveMediaFieldsPaths(payload, mediaFields),
+    assign(payload, resolveMediaFieldsPaths(payload, mediaFields))
+
+    if (!schemaName) {
+      await withArray(relationFields, async field => {
+        const relatedEntity = await this._loadRelation(entity, field)
+        const entityPayload = await this._readPayload(relatedEntity, field)
+
+        delete payload[field]
+        assign(payload, mapKeys(entityPayload, (_, key) => `${field}_${key}`))
+      })
     }
+
+    return payload
   }
-}(strapi, schema)
+
+  /** @private */
+  async _loadRelation(entity, relation) {
+    const { entityService, schema, schemas } = this
+    const entityId = entity[relation].id
+    const entityType = schema.relations[relation]
+    const { mediaFields } = schemas[relation]
+
+    return entityService.findOne(entityType, entityId, {
+      populate: fromPairs(mediaFields.map(field => [field, true]))
+    })
+  }
+}(strapi, schema, { sponsored: sponsorSchema })
 
 module.exports = {
   async afterUpdate(event) {
-    return LifecycleHooks.onUpdate(event)
+    LifecycleHooks._readPayload(event.result)
+    //return LifecycleHooks.onUpdate(event)
   },
 
   // we still need to listen for delete events

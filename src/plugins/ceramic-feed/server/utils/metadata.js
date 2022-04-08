@@ -6,11 +6,14 @@ module.exports = class {
     const { attributes } = schema
     const fields = Object.keys(attributes)
 
-    const mediaFields = fields.filter(field =>
-      'media' === get(attributes, `${field}.type`)
-    )
+    const [mediaFields, relationFields] = ['media', 'relation']
+      .map(type => fields.filter(field =>
+        type === get(attributes, `${field}.type`)
+      ))
 
-    return { fields, mediaFields }
+    const relations = mapValues(pick(attributes, relationFields), 'target')
+
+    return { fields, mediaFields, relationFields, relations }
   }
 
   static resolveMediaFieldsPaths(entity, mediaFields) {
