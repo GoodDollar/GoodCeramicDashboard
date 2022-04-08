@@ -1,5 +1,5 @@
 const mime = require('mime-types')
-const { assign, clone, forIn } = require('lodash')
+const { assign, clone, toPairs } = require('lodash')
 
 const CeramicModel = require('./CeramicModel')
 const { metadata, filesystem } = require('../../utils')
@@ -15,16 +15,18 @@ class CeramicClient {
 
   constructor(strapi, schema, relatedSchemas) {
     const { _getMediaFields } = this
-    let mediaFields = _getMediaFields(schema)
     const ipfs = strapi.service('plugin::ceramic-feed.ipfs')
 
-    forIn(relatedSchemas, (relatedSchema, field) => {
-      const relatedMedia = _getMediaFields(relatedSchema)
+    const mediaFields = toPairs(relatedSchemas).reduce(
+      (fields, [field, relatedSchema]) => {
+        const relatedMedia = _getMediaFields(relatedSchema)
 
-      mediaFields = [...mediaFields, relatedMedia.map(
-        relatedField => `${field}_${relatedField}`
-      )]
-    })
+        return [...fields, relatedMedia.map(
+          relatedField => `${field}_${relatedField}`
+        )]
+      },
+      _getMediaFields(schema)
+    )
 
     assign(this, { ipfs, mediaFields })
   }
