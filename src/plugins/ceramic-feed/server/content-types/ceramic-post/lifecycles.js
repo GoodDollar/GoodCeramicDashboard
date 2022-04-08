@@ -1,9 +1,8 @@
 const { assign, pick, map, mapValues, mapKeys, filter, fromPairs } = require('lodash')
 const { metadata, array, object } = require('../../utils')
-const { withArray } = require('../../utils/async')
 
-const schema = require('./schema');
-const sponsorSchema = require('../sponsor/schema');
+const { withArray } = require('../../utils/async')
+const { schema, relations } = require('./datagram');
 
 const { hasOnlyKeys } = object
 const { resolveMediaFieldsPaths } = metadata
@@ -181,12 +180,11 @@ const LifecycleHooks = new class {
       populate: fromPairs(mediaFields.map(field => [field, true]))
     })
   }
-}(strapi, schema, { sponsored: sponsorSchema })
+}(strapi, schema, relations)
 
 module.exports = {
   async afterUpdate(event) {
-    LifecycleHooks._readPayload(event.result)
-    //return LifecycleHooks.onUpdate(event)
+    return LifecycleHooks.onUpdate(event)
   },
 
   // we still need to listen for delete events
