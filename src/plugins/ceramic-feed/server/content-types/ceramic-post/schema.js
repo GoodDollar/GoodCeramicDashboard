@@ -12,7 +12,7 @@ module.exports = {
   },
   pluginOptions: {
     'content-type-builder': {
-      visible: false,
+      visible: true,
     }
   },
   attributes: {
@@ -34,6 +34,13 @@ module.exports = {
       allowedTypes: [
         'images'
       ]
+    },
+    sponsored: {
+      type: 'relation',
+      relation: 'manyToOne',
+      target: 'plugin::ceramic-feed.sponsor',
+      required: false,
+      configurable: false,
     },
     // reference to the ceramic document ID
     // once doc physically created it kept in Ceramic forever

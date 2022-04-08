@@ -1,9 +1,9 @@
 module.exports = class {
-  static add(array, item) {
-    return [ ...array, item ]
+  static add(array, ...items) {
+    return [ ...array, ...items ]
   }
 
-  static remove(array, item) {
-    return array.filter(arrayItem => arrayItem !== item)
+  static remove(array, ...items) {
+    return array.filter(arrayItem => !items.includes(arrayItem))
   }
 }

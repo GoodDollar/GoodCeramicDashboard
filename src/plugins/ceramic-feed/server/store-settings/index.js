@@ -1,5 +1,9 @@
-const post = require('./ceramic-post')
+const { keyBy, mapValues } = require('lodash')
+const _export = modules => mapValues(keyBy(modules, 'key'), 'settings')
 
-module.exports = {
-  [post.key]: post.settings
-}
+module.exports = _export([
+
+  require('./ceramic-post'),
+  require('./sponsor'),
+
+])

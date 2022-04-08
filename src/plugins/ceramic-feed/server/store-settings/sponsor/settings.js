@@ -1,12 +1,12 @@
 module.exports = {
-  uid: 'plugin::ceramic-feed.ceramic-post',
+  uid: 'plugin::ceramic-feed.sponsor',
   settings: {
     bulkable: true,
     filterable: true,
     searchable: true,
     pageSize: 10,
-    mainField: 'title',
-    defaultSortBy: 'title',
+    mainField: 'link',
+    defaultSortBy: 'link',
     defaultSortOrder: 'ASC'
   },
   metadatas: {
@@ -18,75 +18,32 @@ module.exports = {
         sortable: true
       }
     },
-    title: {
+    link: {
       edit: {
-        label: 'title',
+        label: 'link',
         description: '',
         placeholder: '',
         visible: true,
         editable: true
       },
       list: {
-        label: 'title',
+        label: 'link',
         searchable: true,
         sortable: true
       }
     },
-    content: {
+    logo: {
       edit: {
-        label: 'content',
+        label: 'logo',
         description: '',
         placeholder: '',
         visible: true,
         editable: true
       },
       list: {
-        label: 'content',
+        label: 'logo',
         searchable: false,
         sortable: false
-      }
-    },
-    picture: {
-      edit: {
-        label: 'picture',
-        description: '',
-        placeholder: '',
-        visible: true,
-        editable: true
-      },
-      list: {
-        label: 'picture',
-        searchable: false,
-        sortable: false
-      }
-    },
-    sponsored: {
-      edit: {
-        label: 'sponsored',
-        description: '',
-        placeholder: '',
-        visible: true,
-        editable: true,
-        mainField: 'link'
-      },
-      list: {
-        label: 'sponsored',
-        searchable: true,
-        sortable: true
-      }
-    },
-    cid: {
-      edit: {
-        label: 'cid',
-        description: '',
-        placeholder: '',
-        visible: true,
-        editable: false
-      },
-      list: {
-        label: 'cid',
-        searchable: true,
-        sortable: true
       }
     },
     createdAt: {
@@ -121,22 +78,15 @@ module.exports = {
   layouts: {
     edit: [
       [{
-        name: 'title',
-        size: 8
-      }, {
-        name: 'cid',
-        size: 4
-      }],
-      [{
-        name: 'picture',
+        name: 'logo',
         size: 12
       }],
       [{
-        name: 'content',
+        name: 'link',
         size: 12
       }]
     ],
-    editRelations: ['sponsored'],
-    list: ['id', 'title', 'picture', 'cid']
+    editRelations: [],
+    list: ['id', 'link', 'logo', 'createdAt']
   }
 }

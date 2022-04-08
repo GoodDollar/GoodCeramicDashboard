@@ -1,10 +1,11 @@
-const { join } = require('path');
-const { assign, pick, map, filter, mapValues } = require('lodash');
+const { assign, pick, map, filter } = require('lodash');
 
 const { metadata, array, object } = require('../../utils')
 const schema = require('./schema');
 
 const { hasOnlyKeys } = object
+const { resolveMediaFieldsPaths } = metadata
+
 const LifecycleHooks = new class {
   get ceramic() {
     const { strapi } = this
@@ -130,24 +131,13 @@ const LifecycleHooks = new class {
    * Reads payload and picks uploaded files paths up
    */
   _readPayload(result) {
-    const { fields, mediaFields, strapi } = this
-    const { dirs } = strapi
+    const { fields, mediaFields } = this
+    const payload = pick(result, fields)
 
-    // iterate over fiels
-    return mapValues(pick(result, fields), (value, field) => {
-      // if field is media (e.g. file upload)
-      if (mediaFields.includes(field)) {
-        // its value is object having 'url' prop
-        const { url } = value
-
-        // url is path relative to the public dir
-        // building full path and mapping value with it
-        return join(dirs.public, url)
-      }
-
-      // non-media fields are mapped with own raw values
-      return value
-    })
+    return {
+      ...payload,
+      ...resolveMediaFieldsPaths(payload, mediaFields),
+    }
   }
 }(strapi, schema)
 
