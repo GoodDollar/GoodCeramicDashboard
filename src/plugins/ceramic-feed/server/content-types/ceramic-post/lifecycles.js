@@ -1,10 +1,12 @@
-const { join } = require('path');
-const { assign, pick, map, filter, mapValues } = require('lodash');
-
+const { assign, pick, map, mapValues, mapKeys, filter, fromPairs } = require('lodash')
 const { metadata, array, object } = require('../../utils')
-const schema = require('./schema');
+
+const { withArray } = require('../../utils/async')
+const { schema, relations } = require('./datagram');
 
 const { hasOnlyKeys } = object
+const { resolveMediaFieldsPaths } = metadata
+
 const LifecycleHooks = new class {
   get ceramic() {
     const { strapi } = this
@@ -18,11 +20,18 @@ const LifecycleHooks = new class {
     return db.query('plugin::ceramic-feed.ceramic-post')
   }
 
-  constructor(strapi, schema) {
-    let { fields, mediaFields } = metadata.getFieldsNames(schema)
-    fields = array.remove(fields, 'cid')
+  get entityService() {
+    const { entityService } = this.strapi
 
-    assign(this, { strapi, fields, mediaFields })
+    return entityService
+  }
+
+  constructor(strapi, mainSchema, relatedSchemas) {
+    const { _readSchema } = this
+    const schema = _readSchema(mainSchema)
+    const schemas = mapValues(relatedSchemas, _readSchema)
+
+    assign(this, { strapi, schema, schemas })
   }
 
   async onPublish({ result }) {
@@ -31,10 +40,8 @@ const LifecycleHooks = new class {
 
     // on publish we have to pre-fill
     // or update 'published' date field
-    const payload = {
-      ...this._readPayload(result),
-      published: publishedAt
-    }
+    const payload = await this._readPayload(result)
+      .then(data => ({ ...data, published: publishedAt }))
 
     // if Ceramic ID was set - update doc (with latest data)
     // and publish (by writing 'updated' event to the changelog)
@@ -85,7 +92,7 @@ const LifecycleHooks = new class {
     // the published document was updated and nees to be also updated in Ceramic
     // before update we're checking is Ceramic ID is set
     if (publishedAt && cid) {
-      const payload = this._readPayload(result)
+      const payload = await this._readPayload(result)
 
       await ceramic.updateAndPublish(cid, payload)
     }
@@ -125,31 +132,55 @@ const LifecycleHooks = new class {
     await Promise.all(filter(ids).map(async id => ceramic.unpublish(id)))
   }
 
+  /** @private */
+  _readSchema(schema, schemaName = null) {
+    const schemaMeta = metadata.getFieldsNames(schema)
+    const { fields, mediaFields } = schemaMeta
+
+    if (schemaName) {
+      return { fields, mediaFields }
+    }
+
+    return { ...schemaMeta, fields: array.remove(fields, 'cid') }
+  }
+
   /**
    * @private
    * Reads payload and picks uploaded files paths up
    */
-  _readPayload(result) {
-    const { fields, mediaFields, strapi } = this
-    const { dirs } = strapi
+  async _readPayload(entity, schemaName = null) {
+    const { schema, schemas } = this
+    const entitySchema = schemaName ? schemas[schemaName] : schema
+    const { fields, mediaFields, relationFields } = entitySchema
+    const payload = pick(entity, schema, fields)
 
-    // iterate over fiels
-    return mapValues(pick(result, fields), (value, field) => {
-      // if field is media (e.g. file upload)
-      if (mediaFields.includes(field)) {
-        // its value is object having 'url' prop
-        const { url } = value
+    assign(payload, resolveMediaFieldsPaths(payload, mediaFields))
 
-        // url is path relative to the public dir
-        // building full path and mapping value with it
-        return join(dirs.public, url)
-      }
+    if (!schemaName) {
+      await withArray(relationFields, async field => {
+        const relatedEntity = await this._loadRelation(entity, field)
+        const entityPayload = await this._readPayload(relatedEntity, field)
 
-      // non-media fields are mapped with own raw values
-      return value
+        delete payload[field]
+        assign(payload, mapKeys(entityPayload, (_, key) => `${field}_${key}`))
+      })
+    }
+
+    return payload
+  }
+
+  /** @private */
+  async _loadRelation(entity, relation) {
+    const { entityService, schema, schemas } = this
+    const entityId = entity[relation].id
+    const entityType = schema.relations[relation]
+    const { mediaFields } = schemas[relation]
+
+    return entityService.findOne(entityType, entityId, {
+      populate: fromPairs(mediaFields.map(field => [field, true]))
     })
   }
-}(strapi, schema)
+}(strapi, schema, relations)
 
 module.exports = {
   async afterUpdate(event) {

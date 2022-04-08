@@ -1,7 +1,8 @@
-const { assign, clone } = require('lodash')
+const mime = require('mime-types')
+const { assign, clone, forIn } = require('lodash')
 
 const CeramicModel = require('./CeramicModel')
-const { metadata } = require('../../utils')
+const { metadata, filesystem } = require('../../utils')
 const { withArray } = require('../../utils/async')
 
 class Post extends CeramicModel {
@@ -12,9 +13,18 @@ class CeramicClient {
   ipfs = null
   mediaFields = null
 
-  constructor(strapi, schema) {
-    const { mediaFields } = metadata.getFieldsNames(schema)
+  constructor(strapi, schema, relatedSchemas) {
+    const { _getMediaFields } = this
+    let mediaFields = _getMediaFields(schema)
     const ipfs = strapi.service('plugin::ceramic-feed.ipfs')
+
+    forIn(relatedSchemas, (relatedSchema, field) => {
+      const relatedMedia = _getMediaFields(relatedSchema)
+
+      mediaFields = [...mediaFields, relatedMedia.map(
+        relatedField => `${field}_${relatedField}`
+      )]
+    })
 
     assign(this, { ipfs, mediaFields })
   }
@@ -48,21 +58,42 @@ class CeramicClient {
     await withArray(mediaFields, async field => {
       // skip if no file in payload (e.g. image wasn't changed)
       if (field in payload) {
-        let ipfsCID = null
+        let fieldValue = null
         const filePath = content[field]
 
-        // if file path was set - upload to IPFS
-        // and store CID in document's content
-        // otherwise (e.g. image was removed) set CID to null
+        // if file path was set - process
         if (filePath) {
-          ipfsCID = await ipfs.store(filePath)
+          const mimeType = mime.lookup(filePath)
+
+          switch (mimeType) {
+            case 'text/xml':
+            case 'image/svg':
+            case 'image/svg+xml':
+            case 'application/xml':
+              // if image is SVG - read and store to Ceramic 'as is'
+              fieldValue = await filesystem.getFileContents(filePath)
+              break;
+            default:
+              // if image isn't SVG - upload to IPFS
+              // and store CID in document's content
+              // otherwise (e.g. image was removed) set CID to null
+              fieldValue = await ipfs.store(filePath)
+              break;
+          }
         }
 
-        content[field] = ipfsCID
+        content[field] = fieldValue
       }
     })
 
     return content
+  }
+
+  /** @private */
+  _getMediaFields(schema) {
+    const { mediaFields } = metadata.getFieldsNames(schema)
+
+    return mediaFields
   }
 }
 
