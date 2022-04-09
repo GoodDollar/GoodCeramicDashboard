@@ -75,6 +75,20 @@ module.exports = {
         sortable: true
       }
     },
+    link: {
+      edit: {
+        label: 'Link',
+        description: '',
+        placeholder: '',
+        visible: true,
+        editable: true,
+      },
+      list: {
+        label: 'Link',
+        searchable: true,
+        sortable: true
+      }
+    },
     cid: {
       edit: {
         label: 'cid',
@@ -126,6 +140,9 @@ module.exports = {
       }, {
         name: 'cid',
         size: 4
+      }, {
+        name: 'link',
+        size: 12
       }],
       [{
         name: 'picture',
@@ -137,6 +154,6 @@ module.exports = {
       }]
     ],
     editRelations: ['sponsored'],
-    list: ['id', 'title', 'picture', 'cid']
+    list: ['id', 'title', 'link', 'picture', 'cid']
   }
 }
