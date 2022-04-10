@@ -150,6 +150,7 @@ const LifecycleHooks = new class {
    */
   async _readPayload(entity, schemaName = null) {
     const { schema, schemas } = this
+    const { relatedFieldName } = metadata
     const entitySchema = schemaName ? schemas[schemaName] : schema
     const { fields, mediaFields, relationFields } = entitySchema
     const payload = pick(entity, schema, fields)
@@ -162,7 +163,7 @@ const LifecycleHooks = new class {
         const entityPayload = await this._readPayload(relatedEntity, field)
 
         delete payload[field]
-        assign(payload, mapKeys(entityPayload, (_, key) => `${field}_${key}`))
+        assign(payload, mapKeys(entityPayload, (_, key) => relatedFieldName(key, field)))
       })
     }
 

@@ -12,7 +12,7 @@ module.exports = {
   },
   pluginOptions: {
     'content-type-builder': {
-      visible: true,
+      visible: false,
     }
   },
   attributes: {

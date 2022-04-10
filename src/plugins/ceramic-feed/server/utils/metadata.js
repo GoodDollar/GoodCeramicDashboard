@@ -29,4 +29,8 @@ module.exports = class {
       return join(dirs.public, url)
     })
   }
+
+  static relatedFieldName(relation, field) {
+	return `${relation}_${field}`
+	}
 };
