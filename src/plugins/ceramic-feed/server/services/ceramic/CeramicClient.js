@@ -16,13 +16,14 @@ class CeramicClient {
   constructor(strapi, schema, relatedSchemas) {
     const { _getMediaFields } = this
     const ipfs = strapi.service('plugin::ceramic-feed.ipfs')
+	  const { relatedFieldName } = metadata
 
     const mediaFields = toPairs(relatedSchemas).reduce(
       (fields, [field, relatedSchema]) => {
         const relatedMedia = _getMediaFields(relatedSchema)
 
         return [...fields, relatedMedia.map(
-          relatedField => `${field}_${relatedField}`
+          relatedField => relatedFieldName(field, relatedField)
         )]
       },
       _getMediaFields(schema)

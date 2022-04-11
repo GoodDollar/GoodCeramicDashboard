@@ -12,11 +12,16 @@ module.exports = {
   },
   pluginOptions: {
     'content-type-builder': {
-      visible: true,
+      visible: false,
     }
   },
   attributes: {
     title: {
+      type: 'string',
+      required: true,
+      configurable: false,
+    },
+    link: {
       type: 'string',
       required: true,
       configurable: false,
@@ -29,7 +34,7 @@ module.exports = {
     picture: {
       type: 'media',
       multiple: false,
-      required: true,
+      required: false,
       configurable: false,
       allowedTypes: [
         'images'
