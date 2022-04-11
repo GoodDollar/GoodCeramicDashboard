@@ -1,11 +1,11 @@
 const path = require('path');
 const { URL } = require('url');
-const { trimStart } = require('lodash');
+const { trimStart, trimEnd } = require('lodash');
 
 module.exports = ({ env }) => {
   const databaseUrl = env('DATABASE_URL')
-  const { protocol, username, password, host, port, pathname } = databaseUrl ? new URL(databaseUrl) : {}
-  const client = env('DATABASE_CLIENT', protocol || 'sqlite')
+  const { protocol, username, password, hostname, port, pathname } = databaseUrl ? new URL(databaseUrl) : {}
+  const client = env('DATABASE_CLIENT', protocol ? trimEnd(protocol, ':') : 'sqlite')
 
   const options = {
     postgres: {},
@@ -19,7 +19,7 @@ module.exports = ({ env }) => {
       filename: path.join(__dirname, '..', env('DATABASE_FILENAME', pathname || 'var/db.sqlite3')),
     },
     postgres: {
-      host: env('DATABASE_HOST', host || '127.0.0.1'),
+      host: env('DATABASE_HOST', hostname || '127.0.0.1'),
       port: env.int('DATABASE_PORT', port ? parseInt(port) : 5432),
       database: env('DATABASE_NAME', trimStart(pathname, '/')),
       user: env('DATABASE_USERNAME', username),
