@@ -2,10 +2,6 @@ const path = require('path');
 const { URL } = require('url');
 const { trimStart } = require('lodash');
 
-const getPostgresCreds = env => {
-  const databaseUrl = env('')
-}
-
 module.exports = ({ env }) => {
   const databaseUrl = env('DATABASE_URL')
   const { protocol, username, password, host, port, pathname } = databaseUrl ? new URL(databaseUrl) : {}
