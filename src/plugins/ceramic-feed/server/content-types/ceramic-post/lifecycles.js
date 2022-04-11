@@ -173,13 +173,18 @@ const LifecycleHooks = new class {
   /** @private */
   async _loadRelation(entity, relation) {
     const { entityService, schema, schemas } = this
-    const entityId = entity[relation].id
-    const entityType = schema.relations[relation]
-    const { mediaFields } = schemas[relation]
 
-    return entityService.findOne(entityType, entityId, {
-      populate: fromPairs(mediaFields.map(field => [field, true]))
-    })
+	if (!entity[relation]?.id) {
+	  return 
+	} 
+
+	const entityId = entity[relation]?.id
+	const entityType = schema.relations[relation]
+	const { mediaFields } = schemas[relation]
+
+	return entityService.findOne(entityType, entityId, {
+	  populate: fromPairs(mediaFields.map(field => [field, true]))
+	})
   }
 }(strapi, schema, relations)
 

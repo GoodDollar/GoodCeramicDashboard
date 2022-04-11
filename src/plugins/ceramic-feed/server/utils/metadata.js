@@ -21,16 +21,15 @@ module.exports = class {
 
     // iterate over media (e.g. file upload) fields
     return mapValues(pick(entity, mediaFields), value => {
-      // its value is object having 'url' prop
-      const { url } = value
-
       // url is path relative to the public dir
       // building full path and mapping value with it
-      return join(dirs.public, url)
+	  if (value?.url) {
+        return join(dirs.public, value?.url)
+	  }
     })
   }
 
   static relatedFieldName(relation, field) {
 	return `${relation}_${field}`
-	}
+  }
 };
