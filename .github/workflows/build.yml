@@ -44,14 +44,14 @@ jobs:
         if: "github.event.inputs.release == 'qa'"
         run: |
           npm version prerelease -m "chore: release qa version %s [skip build]"
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/GoodDollar/GoodServer master:${{ github.event.inputs.targetbranch }} --force --follow-tags
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/GoodDollar/GoodServer master --follow-tags
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/GoodDollar/GoodCeramicDashboard master:${{ github.event.inputs.targetbranch }} --force --follow-tags
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/GoodDollar/GoodCeramicDashboard master --follow-tags
 
       # - name: update version prod
       #   if: "github.event.inputs.release != 'qa'"
       #   run: |
       #     npm version minor -m "chore: release prod version %s [skip build]"
-      #     git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/GoodDollar/GoodServer staging:${{ github.event.inputs.targetbranch }} --force --follow-tags
+      #     git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/GoodDollar/GoodCeramicDashboard staging:${{ github.event.inputs.targetbranch }} --force --follow-tags
       #     git checkout master
       #     git merge staging
-      #     git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/GoodDollar/GoodServer master --follow-tags
+      #     git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/GoodDollar/GoodCeramicDashboard master --follow-tags
