@@ -33,11 +33,6 @@
     "sqlite3": "5.0.2",
     "uint8arrays": "^3.0.0"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
   "lint-staged": {
     "src/plugins/ceramic-feed/**/*.js": [
       "eslint --fix --max-warnings=0",
