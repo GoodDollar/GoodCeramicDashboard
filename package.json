@@ -8,10 +8,16 @@
     "start": "strapi start",
     "build": "strapi build",
     "strapi": "strapi",
+    "lint": "eslint \"src/plugins/ceramic-feed/**/*.js\" \"config/*.js\" --max-warnings=0",
+    "lint:fix": "npm run lint -- --fix",
     "generate:ceramic:seed": "node src/plugins/ceramic-feed/cli/commands/generate-seed.js",
     "client:settings": "node src/plugins/ceramic-feed/cli/commands/client-settings.js"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "eslint": "^8.13.0",
+    "husky": "^7.0.4",
+    "lint-staged": "^12.3.7"
+  },
   "dependencies": {
     "@ceramicnetwork/http-client": "^1.5.7",
     "@ceramicnetwork/stream-tile": "^1.5.7",
@@ -25,6 +31,21 @@
     "pg": "^8.7.3",
     "sqlite3": "5.0.2",
     "uint8arrays": "^3.0.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "src/plugins/ceramic-feed/**/*.js": [
+      "eslint --fix --max-warnings=0",
+      "git add"
+    ],
+    "config/*.js": [
+      "eslint --fix --max-warnings=0",
+      "git add"
+    ]
   },
   "author": {
     "name": "A Strapi developer"

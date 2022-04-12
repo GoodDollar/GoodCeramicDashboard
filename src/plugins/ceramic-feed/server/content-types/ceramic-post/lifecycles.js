@@ -153,17 +153,21 @@ const LifecycleHooks = new class {
     const { relatedFieldName } = metadata
     const entitySchema = schemaName ? schemas[schemaName] : schema
     const { fields, mediaFields, relationFields } = entitySchema
-    const payload = pick(entity, schema, fields)
+    const payload = pick(entity, fields)
 
     assign(payload, resolveMediaFieldsPaths(payload, mediaFields))
 
     if (!schemaName) {
       await withArray(relationFields, async field => {
         const relatedEntity = await this._loadRelation(entity, field)
-        const entityPayload = await this._readPayload(relatedEntity, field)
+
+        if (relatedEntity) {
+          const entityPayload = await this._readPayload(relatedEntity, field)
+
+          assign(payload, mapKeys(entityPayload, (_, key) => relatedFieldName(key, field)))
+        }
 
         delete payload[field]
-        assign(payload, mapKeys(entityPayload, (_, key) => relatedFieldName(key, field)))
       })
     }
 
@@ -173,18 +177,19 @@ const LifecycleHooks = new class {
   /** @private */
   async _loadRelation(entity, relation) {
     const { entityService, schema, schemas } = this
+    const shortEntity = entity[relation]
 
-	if (!entity[relation]?.id) {
-	  return 
-	} 
+    if (!shortEntity) {
+      return
+    }
 
-	const entityId = entity[relation]?.id
-	const entityType = schema.relations[relation]
-	const { mediaFields } = schemas[relation]
+    const entityId = shortEntity.id
+    const entityType = schema.relations[relation]
+    const { mediaFields } = schemas[relation]
 
-	return entityService.findOne(entityType, entityId, {
-	  populate: fromPairs(mediaFields.map(field => [field, true]))
-	})
+    return entityService.findOne(entityType, entityId, {
+      populate: fromPairs(mediaFields.map(field => [field, true]))
+    })
   }
 }(strapi, schema, relations)
 

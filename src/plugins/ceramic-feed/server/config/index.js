@@ -4,7 +4,7 @@ module.exports = {
   default: ({ env }) => ({
     ceramicNodeURL: env('CERAMIC_NODE_URL', 'https://ceramic-clay.3boxlabs.com'),
   }),
-  validator({ direct, ...config }) {
+  validator(config) {
     const mandatoryOptions = ['ceramicNodeURL', 'ceramicDIDSeed', 'pinataApiKey', 'pinataSecret']
 
     mandatoryOptions.forEach(option => {
