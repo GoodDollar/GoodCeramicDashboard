@@ -8,6 +8,7 @@
     "start": "strapi start",
     "build": "strapi build",
     "strapi": "strapi",
+    "prepare": "husky install",
     "lint": "eslint \"src/plugins/ceramic-feed/**/*.js\" \"config/*.js\" --max-warnings=0",
     "lint:fix": "npm run lint -- --fix",
     "generate:ceramic:seed": "node src/plugins/ceramic-feed/cli/commands/generate-seed.js",
