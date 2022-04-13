@@ -1,5 +1,6 @@
 const { join } = require('path');
 const { get, mapValues, pick } = require('lodash')
+const { isValidURL } = require('./string')
 
 module.exports = class {
   static relatedFieldName = (relation, field) => `${relation}_${field}`
@@ -22,10 +23,19 @@ module.exports = class {
     const { dirs } = strapi
 
     // iterate over media (e.g. file upload) fields
-    return mapValues(pick(entity, mediaFields), value =>
-      // url is path relative to the public dir
-      // building full path and mapping value with it
-      value ? join(dirs.public, value.url) : null
-    )
+    return mapValues(pick(entity, mediaFields), value => {
+      // ignore empty value
+      if (!value) {
+        return null
+      }
+
+      const { url } = value
+
+      return isValidURL(url)
+        ? url // if url is valid url (e.g. link to S3) - return it "as is"
+        // in other case url is path relative to the public dir
+        // so we building full path and mapping value with it
+        : join(dirs.public, url)
+    })
   }
 };

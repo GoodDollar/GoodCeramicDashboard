@@ -1,5 +1,7 @@
 const mime = require('mime-types')
 const { assign, clone, toPairs } = require('lodash')
+const { basename } = require('path')
+const { URL } = require('url')
 
 const CeramicModel = require('./CeramicModel')
 const { metadata, filesystem } = require('../../utils')
@@ -11,12 +13,15 @@ class Post extends CeramicModel {
 
 class CeramicClient {
   ipfs = null
+  http = null
   mediaFields = null
 
-  constructor(strapi, schema, relatedSchemas) {
+  constructor(strapi, httpFactory, schema, relatedSchemas) {
     const { _getMediaFields } = this
-    const ipfs = strapi.service('plugin::ceramic-feed.ipfs')
     const { relatedFieldName } = metadata
+
+    const ipfs = strapi.service('plugin::ceramic-feed.ipfs')
+    const http = httpFactory({ responseType: 'arraybuffer' })
 
     const mediaFields = toPairs(relatedSchemas).reduce(
       (fields, [field, relatedSchema]) => {
@@ -29,7 +34,8 @@ class CeramicClient {
       _getMediaFields(schema)
     )
 
-    assign(this, { ipfs, mediaFields })
+    http.interceptors.response.use(({ data }) => Buffer.from(data, 'binary'))
+    assign(this, { ipfs, http, mediaFields })
   }
 
   async createAndPublish(payload) {
@@ -60,33 +66,39 @@ class CeramicClient {
     // loop over media (file upload) fields
     await withArray(mediaFields, async field => {
       // skip if no file in payload (e.g. image wasn't changed)
-      if (field in payload) {
-        let fieldValue = null
-        const filePath = content[field]
-
-        // if file path was set - process
-        if (filePath) {
-          const mimeType = mime.lookup(filePath)
-
-          switch (mimeType) {
-            case 'text/xml':
-            case 'image/svg':
-            case 'image/svg+xml':
-            case 'application/xml':
-              // if image is SVG - read and store to Ceramic 'as is'
-              fieldValue = await filesystem.getFileContents(filePath)
-              break;
-            default:
-              // if image isn't SVG - upload to IPFS
-              // and store CID in document's content
-              // otherwise (e.g. image was removed) set CID to null
-              fieldValue = await ipfs.store(filePath)
-              break;
-          }
-        }
-
-        content[field] = fieldValue
+      if (!(field in payload)) {
+        return
       }
+
+      let fieldValue = null
+      const filePath = content[field]
+
+      // if file path wasn't - skip
+      if (!filePath) {
+        return
+      }
+
+      await this._withMediaFilePath(filePath, async path => {
+        const mimeType = mime.lookup(path)
+
+        switch (mimeType) {
+          case 'text/xml':
+          case 'image/svg':
+          case 'image/svg+xml':
+          case 'application/xml':
+            // if image is SVG - read and store to Ceramic 'as is'
+            fieldValue = await filesystem.getFileContents(path)
+            break;
+          default:
+            // if image isn't SVG - upload to IPFS
+            // and store CID in document's content
+            // otherwise (e.g. image was removed) set CID to null
+            fieldValue = await ipfs.store(path)
+            break;
+        }
+      })
+
+      content[field] = fieldValue
     })
 
     return content
@@ -97,6 +109,28 @@ class CeramicClient {
     const { mediaFields } = metadata.getFieldsNames(schema)
 
     return mediaFields
+  }
+
+  /** @private */
+  async _withMediaFilePath(urlOrPath, callback) {
+    const { http } = this
+    const path = urlOrPath
+    let url
+
+    try {
+      url = new URL(urlOrPath)
+    } catch {
+      // if not url, just a local path - run callback
+      return callback(path)
+    }
+
+    // if url - get file name
+    const filename = basename(url.pathname)
+    // download it
+    const buffer = await http.get(urlOrPath)
+
+    // write to temporary file and run callback
+    return filesystem.withTemporaryFile(buffer, filename, callback)
   }
 }
 

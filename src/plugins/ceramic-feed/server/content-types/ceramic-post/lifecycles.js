@@ -164,7 +164,7 @@ const LifecycleHooks = new class {
         if (relatedEntity) {
           const entityPayload = await this._readPayload(relatedEntity, field)
 
-          assign(payload, mapKeys(entityPayload, (_, key) => relatedFieldName(key, field)))
+          assign(payload, mapKeys(entityPayload, (_, key) => relatedFieldName(field, key)))
         }
 
         delete payload[field]
