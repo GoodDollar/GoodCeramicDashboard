@@ -1,7 +1,7 @@
 module.exports = ({ env }) => {
   const bucket = env('AWS_BUCKET')
   const provider = env('UPLOAD_PROVIDER', 'local')
-  let strapiSecurity ='strapi::security'
+  let strapiSecurity = 'strapi::security'
 
   if ('aws-s3' === provider)  {
     strapiSecurity = {
