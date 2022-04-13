@@ -1,3 +1,4 @@
+const mime = require('mime-types')
 const { readFile, writeFile, unlink } = require('fs')
 const { tmpdir } = require('os')
 const { join } = require ('path')
@@ -11,6 +12,13 @@ module.exports = class FileSystemUtils {
   static _writeFileConents = promisify(writeFile)
   /** @private */
   static _deleteFile = promisify(unlink)
+  /** @private */
+  static _svgMimeTypes = [
+    'text/xml',
+    'image/svg',
+    'image/svg+xml',
+    'application/xml',
+  ]
 
   static async getFileContents(path, readAs = 'utf8') {
     const { _readFileConents } = FileSystemUtils
@@ -32,5 +40,12 @@ module.exports = class FileSystemUtils {
     }
 
     return result
+  }
+
+  static isImageSVG(path) {
+    const { _svgMimeTypes } = FileSystemUtils
+    const mimeType = mime.lookup(path)
+
+    return _svgMimeTypes.includes(mimeType)
   }
 }

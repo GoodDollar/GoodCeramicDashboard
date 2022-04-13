@@ -13,63 +13,63 @@ module.exports = {
     id: {
       edit: {},
       list: {
-        label: 'id',
+        label: 'ID',
         searchable: true,
         sortable: true
       }
     },
     link: {
       edit: {
-        label: 'link',
-        description: '',
+        label: 'URL',
+        description: 'Sponsor\'s site or social page url',
         placeholder: '',
         visible: true,
         editable: true
       },
       list: {
-        label: 'link',
+        label: 'URL',
         searchable: true,
         sortable: true
       }
     },
     logo: {
       edit: {
-        label: 'logo',
-        description: '',
+        label: 'Logo image',
+        description: 'Sponsor\'s logo image. Pick .SVG files only!',
         placeholder: '',
         visible: true,
         editable: true
       },
       list: {
-        label: 'logo',
+        label: 'Logo image',
         searchable: false,
         sortable: false
       }
     },
     createdAt: {
       edit: {
-        label: 'createdAt',
+        label: 'Created At',
         description: '',
         placeholder: '',
         visible: false,
         editable: true
       },
       list: {
-        label: 'createdAt',
+        label: 'Created At',
         searchable: true,
         sortable: true
       }
     },
     updatedAt: {
       edit: {
-        label: 'updatedAt',
+        label: 'Updated At',
         description: '',
         placeholder: '',
         visible: false,
         editable: true
       },
       list: {
-        label: 'updatedAt',
+        label: 'Updated At',
         searchable: true,
         sortable: true
       }

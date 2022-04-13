@@ -1,4 +1,3 @@
-const mime = require('mime-types')
 const { assign, clone, toPairs } = require('lodash')
 const { basename } = require('path')
 const { URL } = require('url')
@@ -73,30 +72,18 @@ class CeramicClient {
       let fieldValue = null
       const filePath = content[field]
 
-      // if file path wasn't - skip
-      if (!filePath) {
-        return
-      }
-
-      await this._withMediaFilePath(filePath, async path => {
-        const mimeType = mime.lookup(path)
-
-        switch (mimeType) {
-          case 'text/xml':
-          case 'image/svg':
-          case 'image/svg+xml':
-          case 'application/xml':
+      // process if filePath was set
+      if (filePath) {
+        fieldValue = await this._withMediaFilePath(filePath, async path =>
+          filesystem.isImageSVG(path)
             // if image is SVG - read and store to Ceramic 'as is'
-            fieldValue = await filesystem.getFileContents(path)
-            break;
-          default:
+            ? filesystem.getFileContents(path)
             // if image isn't SVG - upload to IPFS
             // and store CID in document's content
             // otherwise (e.g. image was removed) set CID to null
-            fieldValue = await ipfs.store(path)
-            break;
-        }
-      })
+            : ipfs.store(path)
+        )
+      }
 
       content[field] = fieldValue
     })
