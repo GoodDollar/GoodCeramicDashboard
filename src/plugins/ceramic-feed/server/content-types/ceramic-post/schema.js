@@ -27,7 +27,7 @@ module.exports = {
       configurable: false,
     },
     content: {
-      type: 'richtext',
+      type: 'text',
       required: true,
       configurable: false,
     },
