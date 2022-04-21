@@ -11,6 +11,7 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
+    if: "!endsWith(github.ref, '/master') || !contains(github.event.head_commit.message, 'release:')"
     steps:
       - name: Pre-checks - Env is Dev
         run: |
