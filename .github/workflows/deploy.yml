@@ -32,9 +32,9 @@ jobs:
 
       - uses: actions/checkout@v2
         with:
-            persist-credentials: false
-            fetch-depth: 0
-            ref: ${{env.HEROKU_BRANCH}}
+          persist-credentials: false
+          fetch-depth: 0
+          ref: ${{env.HEROKU_BRANCH}}
 
       - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
         with:
