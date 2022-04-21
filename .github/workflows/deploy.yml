@@ -11,6 +11,7 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message,'release:') && !contains(github.event.head_commit.message,'skip ci')"
     steps:
      - name: Pre-checks - Env is Dev
         run: |
@@ -30,7 +31,6 @@ jobs:
           echo "HEROKU_BRANCH=next" >> $GITHUB_ENV
 
       - uses: actions/checkout@v2
-
       - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
         with:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
