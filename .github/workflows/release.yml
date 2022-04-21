@@ -54,4 +54,4 @@ jobs:
           git push https://x-access-token:${{ secrets.PAT }}@github.com/GoodDollar/GoodCeramicDashboard staging:${{ github.event.inputs.targetbranch }} --force --follow-tags
           git checkout master
           git merge staging
-          git push https://x-access-token:${{ secrets.PAT }}@github.com/GoodDollar/GoodCeramicDashboard master --follow-tagss
+          git push https://x-access-token:${{ secrets.PAT }}@github.com/GoodDollar/GoodCeramicDashboard master --follow-tags
