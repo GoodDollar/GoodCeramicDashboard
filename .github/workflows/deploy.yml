@@ -16,19 +16,16 @@ jobs:
       - name: Pre-checks - Env is Dev
         run: |
           echo "HEROKU_APP_NAME=goodceramic-dev" >> $GITHUB_ENV
-          echo "HEROKU_BRANCH=master" >> $GITHUB_ENV
 
       - name: Pre-checks - Env is QA
         if: ${{ endsWith(github.ref, '/staging') }}
         run: |
           echo "HEROKU_APP_NAME=goodceramic-qa" >> $GITHUB_ENV
-          echo "HEROKU_BRANCH=staging" >> $GITHUB_ENV
 
       - name: Pre-checks - Env is PROD
         if: ${{ endsWith(github.ref, '/next') }}
         run: |
           echo "HEROKU_APP_NAME=goodceramic-next" >> $GITHUB_ENV
-          echo "HEROKU_BRANCH=next" >> $GITHUB_ENV
 
       - uses: actions/checkout@v2
       - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
@@ -36,4 +33,3 @@ jobs:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
           heroku_app_name: ${{env.HEROKU_APP_NAME}}
           heroku_email: "alexey@gooddollar.org"
-          branch: ${{env.HEROKU_BRANCH}}
