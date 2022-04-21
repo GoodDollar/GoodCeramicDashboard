@@ -43,14 +43,14 @@ jobs:
       - name: update version qa
         if: "github.event.inputs.release == 'qa'"
         run: |
-          npm version prerelease -m "chore: release qa version %s [skip build]"
+          npm version prerelease -m "chore: release qa version %s [skip deploy]"
           git push https://x-access-token:${{ secrets.PAT }}@github.com/GoodDollar/GoodCeramicDashboard master:${{ github.event.inputs.targetbranch }} --force --follow-tags
           git push https://x-access-token:${{ secrets.PAT }}@github.com/GoodDollar/GoodCeramicDashboard master --follow-tags
 
       - name: update version prod
         if: "github.event.inputs.release != 'qa'"
         run: |
-          npm version minor -m "chore: release prod version %s [skip build]"
+          npm version minor -m "chore: release prod version %s [skip deploy]"
           git push https://x-access-token:${{ secrets.PAT }}@github.com/GoodDollar/GoodCeramicDashboard staging:${{ github.event.inputs.targetbranch }} --force --follow-tags
           git checkout master
           git merge staging
