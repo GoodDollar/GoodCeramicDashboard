@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message,'release:') && !contains(github.event.head_commit.message,'skip ci')"
     steps:
-     - name: Pre-checks - Env is Dev
+      - name: Pre-checks - Env is Dev
         run: |
           echo "HEROKU_APP_NAME=goodceramic-dev" >> $GITHUB_ENV
           echo "HEROKU_BRANCH=master" >> $GITHUB_ENV
