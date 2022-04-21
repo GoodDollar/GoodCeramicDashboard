@@ -16,7 +16,7 @@ jobs:
       - name: Pre-checks - Env is Dev
         run: |
           echo "HEROKU_APP_NAME=goodceramic-dev" >> $GITHUB_ENV
-          echo "HEROKU_BRANCH=HEAD" >> $GITHUB_ENV
+          echo "HEROKU_BRANCH=master" >> $GITHUB_ENV
 
       - name: Pre-checks - Env is QA
         if: ${{ endsWith(github.ref, '/staging') }}
