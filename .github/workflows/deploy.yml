@@ -31,9 +31,13 @@ jobs:
           echo "HEROKU_BRANCH=next" >> $GITHUB_ENV
 
       - uses: actions/checkout@v2
+        with:
+            persist-credentials: false
+            fetch-depth: 0
+            ref: ${{env.HEROKU_BRANCH}}
+
       - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
         with:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
           heroku_app_name: ${{env.HEROKU_APP_NAME}}
           heroku_email: "alexey@gooddollar.org"
-          branch: ${{env.HEROKU_BRANCH}}
