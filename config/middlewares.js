@@ -1,10 +1,11 @@
 module.exports = ({ env }) => {
-  const bucket = env('AWS_BUCKET')
-  const region = env('AWS_REGION')
   const provider = env('UPLOAD_PROVIDER', 'local')
   let strapiSecurity = 'strapi::security'
 
   if ('aws-s3' === provider)  {
+    const bucket = env('AWS_BUCKET')
+    const region = env('AWS_REGION')
+    
     const allowedSource = [
       `https://${bucket}.s3.amazonaws.com`,
       `https://${bucket}.s3.${region}.amazonaws.com`
