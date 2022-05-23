@@ -1,11 +1,13 @@
-const { assign, pick, map, mapValues, mapKeys, filter, fromPairs } = require('lodash')
-const { metadata, array, object } = require('../../utils')
+const { assign, pick, map, mapValues, mapKeys, filter, isEmpty, isPlainObject, bindAll } = require('lodash')
+
+const { ApplicationError } = require('@strapi/utils').errors;
+const { metadata, array } = require('../../utils')
 
 const { withArray } = require('../../utils/async')
 const { schema, relations } = require('./datagram');
 
-const { hasOnlyKeys } = object
-const { resolveMediaFieldsPaths } = metadata
+const { resolveMediaFieldsPaths, makePopulate } = metadata
+const POSTS = 'plugin::ceramic-feed.ceramic-post'
 
 const LifecycleHooks = new class {
   get ceramic() {
@@ -15,9 +17,11 @@ const LifecycleHooks = new class {
   }
 
   get posts() {
-    const { db } = this.strapi
+    return this._query(POSTS)
+  }
 
-    return db.query('plugin::ceramic-feed.ceramic-post')
+  get assets() {
+    return this._query('plugin::upload.file')
   }
 
   get entityService() {
@@ -32,48 +36,40 @@ const LifecycleHooks = new class {
     const schemas = mapValues(relatedSchemas, _readSchema)
 
     assign(this, { strapi, schema, schemas })
+    bindAll(this, '_callCeramic')
   }
 
-  async onPublish({ result }) {
-    const { ceramic, posts } = this
-    const { cid, publishedAt } = result
+  async onPublish(event) {
+    const { _callCeramic } = this
+    const entity = await this._loadEntity(event)
+    const { cid, publishedAt } = entity
 
     // on publish we have to pre-fill
     // or update 'published' date field
-    const payload = await this._readPayload(result)
+    const payload = await this._readPayload(entity)
       .then(data => ({ ...data, published: publishedAt }))
 
     // if Ceramic ID was set - update doc (with latest data)
     // and publish (by writing 'updated' event to the changelog)
     if (cid) {
-      await ceramic.updateAndPublish(cid, payload)
+      await _callCeramic(async ceramic => {
+        await ceramic.updateAndPublish(cid, payload)
+      })
+
       return
     }
 
     // if no Ceramic ID in document - create document
     // and write 'added' event to the changelog
-    const document = await ceramic.createAndPublish(payload)
-    const data = { cid: String(document.id) }
-    const where = pick(result, 'id')
+    const document = await _callCeramic(async ceramic => ceramic.createAndPublish(payload))
 
-    // prefill result with Ceramic ID newly generated
-    assign(result, data)
-    // update post record with Ceramic IDs
-    await posts.update({ where, data })
+    // prefill data with Ceramic ID newly generated
+    event.data.cid = String(document.id)
   }
 
   async onUpdate(event) {
-    const { ceramic } = this
-    const { params, result } = event
-    const { publishedAt, cid } = result
-    const { data, where } = params
-
-    // id update payload have only 'cid' and 'updatedAt'
-    // fields - this is the update query from onPublish()
-    if (hasOnlyKeys(data, 'cid', 'updatedAt') && hasOnlyKeys(where, 'id')) {
-      // if setting ceramic id on first publish - do nothing
-      return
-    }
+    const { _callCeramic } = this
+    const { data } = event.params
 
     // if 'publishedAt' present in update PAYLOAD - publish or unpublish
     // button was pressed, there's no other cases where this field
@@ -88,48 +84,50 @@ const LifecycleHooks = new class {
       return this.onUnpublish(event)
     }
 
+    const entity = await this._loadEntity(event)
+    const { publishedAt, cid } = entity
+
     // if 'publishedAt' present in DOCUMENT (but absent in UPDATE PAYLOAD) that means
     // the published document was updated and nees to be also updated in Ceramic
     // before update we're checking is Ceramic ID is set
     if (publishedAt && cid) {
-      const payload = await this._readPayload(result)
+      const payload = await this._readPayload(entity)
 
-      await ceramic.updateAndPublish(cid, payload)
+      await _callCeramic(async ceramic => {
+        await ceramic.updateAndPublish(cid, payload)
+      })
     }
 
     // if no 'publishedAt' present in DOCUMENT then means the DRAFT was updated we're skipping
     // updating of the drafts in Ceramic. they will be updated on the next re-publish
   }
 
-  async onUnpublish({ result, params }) {
-    const { ceramic } = this
+  async onUnpublish(event) {
+    const { params } = event
+    const { where, data } = params
+    const { _callCeramic, posts } = this
+    let ids
 
-    // afterDelete triggers once also at bulk remove
-    // with specific where condition we could check for
-    if ('$and' in params.where) {
-      // skip on bulk remove
+    if (('data' in params) && ('cid' in data)) {
+      ids = [data.cid]
+    } else {
+      // getting ceramic IDs querying posts table
+      // by id/ids got from event's where conditions
+      ids = await posts
+        .findMany({ select: ['cid'], where })
+        .then(records => map(records, 'cid'))
+    }
+
+    ids = filter(ids)
+
+    if (isEmpty(ids)) {
       return
     }
 
-    // if non-bulk remove - getting ceramic
-    // ID and unpublishing document
-    const { cid } = result
-
-    // do not try to remove the document wasn't published
-    if (cid) {
-      await ceramic.unpublish(cid)
-    }
-  }
-
-  async onUnpublishMany({ params }) {
-    const { ceramic, posts } = this
-    const { where } = params
-
-    const ids = await posts
-      .findMany({ select: ['cid'], where })
-      .then(records => map(records, 'cid'))
-
-    await Promise.all(filter(ids).map(async id => ceramic.unpublish(id)))
+    await _callCeramic(async ceramic => {
+      // unpublishing document by ceramic ID
+      await withArray(ids, async id => ceramic.unpublish(id))
+    })
   }
 
   /** @private */
@@ -155,6 +153,10 @@ const LifecycleHooks = new class {
     const { fields, mediaFields, relationFields } = entitySchema
     const payload = pick(entity, fields)
 
+    await withArray(mediaFields, async field => {
+      payload[field] = await this._loadAsset(payload, field)
+    })
+
     assign(payload, resolveMediaFieldsPaths(payload, mediaFields))
 
     if (!schemaName) {
@@ -175,6 +177,14 @@ const LifecycleHooks = new class {
   }
 
   /** @private */
+  async _loadEntity(event) {
+    const { where, data, populate } = event.params
+    const post = await this._queryEntity(POSTS, where.id, { populate })
+
+    return { ...post, ...data }
+  }
+
+  /** @private */
   async _loadRelation(entity, relation) {
     const { entityService, schema, schemas } = this
     const shortEntity = entity[relation]
@@ -183,29 +193,67 @@ const LifecycleHooks = new class {
       return
     }
 
-    const entityId = shortEntity.id
+    const entityId = isPlainObject(shortEntity) ? shortEntity.id : shortEntity
     const entityType = schema.relations[relation]
     const { mediaFields } = schemas[relation]
 
     return entityService.findOne(entityType, entityId, {
-      populate: fromPairs(mediaFields.map(field => [field, true]))
+      populate: makePopulate(mediaFields)
     })
+  }
+
+  /** @private */
+  async _loadAsset(entity, assetName) {
+    const { assets } = this
+    const media = entity[assetName]
+
+    if (!media || isPlainObject(media)) {
+      return media
+
+    }
+
+    return assets.findOne({ select: ['url'], where: { id: media }})
+  }
+
+  /** @private */
+  _query(collection) {
+    const { db } = this.strapi
+
+    return db.query(collection)
+  }
+
+  /** @private */
+  async _queryEntity(collection, id, options = {}) {
+    const { entityService } = this.strapi
+
+    return entityService.findOne(collection, id, options)
+  }
+
+  /** @private */
+  async _callCeramic(callback) {
+    try {
+      return await callback(this.ceramic)
+    } catch (e) {
+      console.log(e)
+      throw new ApplicationError('Ceramic Network sync failed. Please try again later...')
+    }
   }
 }(strapi, schema, relations)
 
 module.exports = {
-  async afterUpdate(event) {
+  async beforeUpdate(event) {
+    console.log(event)
     return LifecycleHooks.onUpdate(event)
   },
 
   // we still need to listen for delete events
   // because physical removal should also unpublish
   // documents from Ceramic Network
-  async afterDelete(event) {
+  async beforeDelete(event) {
     return LifecycleHooks.onUnpublish(event)
   },
 
   async beforeDeleteMany(event) {
-    return LifecycleHooks.onUnpublishMany(event)
+    return LifecycleHooks.onUnpublish(event)
   }
 }

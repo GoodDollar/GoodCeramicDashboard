@@ -1,5 +1,5 @@
 const { join } = require('path');
-const { get, mapValues, pick } = require('lodash')
+const { get, mapValues, pick, fromPairs } = require('lodash')
 const { isValidURL } = require('./string')
 
 module.exports = class {
@@ -37,5 +37,9 @@ module.exports = class {
         // so we building full path and mapping value with it
         : join(dirs.public, url)
     })
+  }
+
+  static makePopulate(fields) {
+    return fromPairs(fields.map(field => [field, true]))
   }
 };
