@@ -42,12 +42,14 @@ const LifecycleHooks = new class {
   async onPublish(event) {
     const { _callCeramic } = this
     const entity = await this._loadEntity(event)
+
     const { cid, publishedAt } = entity
+    const published = publishedAt instanceof Date ? publishedAt.toISOString() : publishedAt
 
     // on publish we have to pre-fill
     // or update 'published' date field
     const payload = await this._readPayload(entity)
-      .then(data => ({ ...data, published: publishedAt }))
+    .then(data => ({ ...data, published }))
 
     // if Ceramic ID was set - update doc (with latest data)
     // and publish (by writing 'updated' event to the changelog)
@@ -62,9 +64,10 @@ const LifecycleHooks = new class {
     // if no Ceramic ID in document - create document
     // and write 'added' event to the changelog
     const document = await _callCeramic(async ceramic => ceramic.createAndPublish(payload))
+    const { data } = event.params
 
     // prefill data with Ceramic ID newly generated
-    event.data.cid = String(document.id)
+    data.cid = String(document.id)
   }
 
   async onUpdate(event) {
@@ -209,7 +212,6 @@ const LifecycleHooks = new class {
 
     if (!media || isPlainObject(media)) {
       return media
-
     }
 
     return assets.findOne({ select: ['url'], where: { id: media }})
@@ -234,7 +236,6 @@ const LifecycleHooks = new class {
     try {
       return await callback(this.ceramic)
     } catch (e) {
-      console.log(e)
       throw new ApplicationError('Ceramic Network sync failed. Please try again later...')
     }
   }
@@ -242,7 +243,6 @@ const LifecycleHooks = new class {
 
 module.exports = {
   async beforeUpdate(event) {
-    console.log(event)
     return LifecycleHooks.onUpdate(event)
   },
 

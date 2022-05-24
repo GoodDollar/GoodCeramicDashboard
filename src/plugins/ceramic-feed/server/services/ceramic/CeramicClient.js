@@ -40,8 +40,6 @@ class CeramicClient {
   async createAndPublish(payload) {
     const content = await this._getContent(payload)
 
-    console.log(content)
-
     return Post.createAndPublish(content)
   }
 

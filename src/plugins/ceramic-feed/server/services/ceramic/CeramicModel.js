@@ -1,15 +1,17 @@
 const { assign, isEmpty, get } = require('lodash')
 const { array } = require('../../utils')
 
-const { TileDocument } = require('@ceramicnetwork/stream-tile')
-
 class CeramicModel {
+  static tile = null;
+
   static ceramic = null;
 
   static family = null;
 
   static async load(id) {
-    return TileDocument.load(this.ceramic, id)
+    const { ceramic, tile  } = this
+
+    return tile.load(ceramic, id)
   }
 
   /** Checks is document published (by checking the index doc) */
@@ -22,8 +24,9 @@ class CeramicModel {
 
   /** Creates new Ceramic document */
   static async create(content, tags = []) {
+    const { ceramic, tile } = this
     const metadata = this._createMetadata(tags)
-    const newDocument = await TileDocument.create(this.ceramic, content, metadata)
+    const newDocument = await tile.create(ceramic, content, metadata)
 
     return newDocument
   }
@@ -141,10 +144,10 @@ class CeramicModel {
 
   /** @private */
   static async _deterministic(tags) {
-    const { ceramic, family } = this
+    const { ceramic, family, tile } = this
     const { id: controller } = ceramic.did
 
-    return TileDocument.deterministic(ceramic, {
+    return tile.deterministic(ceramic, {
       // A single controller must be provided to reference a deterministic document
       controllers: [controller],
       // A family or tag must be provided in addition to the controller
