@@ -16,6 +16,6 @@ module.exports = class AsyncUtils {
       import(module).then(module => pick(module, name))
     )
 
-    return assign(...imported)
+    return assign({}, ...imported)
   }
 }
