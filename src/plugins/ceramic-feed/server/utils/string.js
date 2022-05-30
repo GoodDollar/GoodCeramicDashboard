@@ -1,4 +1,5 @@
 const { URL } = require('url')
+const { createHash } = require('crypto')
 const { memoize, template, isPlainObject } = require('lodash')
 
 module.exports = class {
@@ -20,5 +21,11 @@ module.exports = class {
     } catch {
       return false
     }
+  }
+
+  static sha1(string) {
+    const hash = createHash('sha1')
+
+    return hash.update(string).digest('hex')
   }
 }

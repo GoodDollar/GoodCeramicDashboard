@@ -1,5 +1,6 @@
-const { assign, isEmpty, get } = require('lodash')
-const { array } = require('../../utils')
+const AsyncLock = require('async-lock')
+const { assign, isEmpty, get, last } = require('lodash')
+const { array, string } = require('../../utils')
 
 class CeramicModel {
   static tile = null;
@@ -7,6 +8,8 @@ class CeramicModel {
   static ceramic = null;
 
   static family = null;
+
+  static mutex = new AsyncLock();
 
   static async load(id) {
     const { ceramic, tile  } = this
@@ -108,7 +111,7 @@ class CeramicModel {
     const tagName = `${forLiveIndex ? 'live-' : ''}indexes`
     const index = await this._deterministic([tagName])
 
-    if (isEmpty(index.content) && !forLiveIndex) {
+    if (isEmpty(index.content)) {
       await index.update({ items: [] })
     }
 
@@ -137,9 +140,31 @@ class CeramicModel {
 
   /** @private */
   static async _updateLiveIndexes(id, action) {
-    const indexDocument = await this.getLiveIndex();
+    const item = String(id)
+    const { ceramic, mutex, family } = this
+    const { id: publisher } = ceramic.did
 
-    await indexDocument.update({ action, item: String(id) })
+    await mutex.acquire(family, async () => {
+      const indexDocument = await this.getLiveIndex();
+      const { items } = indexDocument.content
+      const { id: lastHistoryId } = last(items) || {}
+
+      const historyIdSource = [
+        item,
+        action,
+        Date.now(),
+        String(publisher)
+      ]
+
+      if (lastHistoryId) {
+        historyIdSource.push(lastHistoryId)
+      }
+
+      const newHistoryId = string.sha1(historyIdSource.join(''))
+      const newHistoryRecord = { id: newHistoryId, action, item }
+
+      await indexDocument.update({ items: [...items, newHistoryRecord] })
+    })
   }
 
   /** @private */
