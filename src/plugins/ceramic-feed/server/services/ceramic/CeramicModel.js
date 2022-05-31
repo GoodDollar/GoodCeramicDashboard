@@ -162,8 +162,9 @@ class CeramicModel {
 
       const newHistoryId = string.sha1(historyIdSource.join(''))
       const newHistoryRecord = { id: newHistoryId, action, item }
+      const newHistoryPatch = { op: "add", path: "/items/-", value: newHistoryRecord }
 
-      await indexDocument.update({ items: [...items, newHistoryRecord] })
+      await indexDocument.patch([newHistoryPatch])
     })
   }
 
