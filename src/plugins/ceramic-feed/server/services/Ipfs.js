@@ -1,8 +1,9 @@
+const { trimEnd } = require('lodash')
 const { createReadStream } = require('fs')
 const axios = require('axios');
 const FormData = require('form-data');
 const  { CID } = require('multiformats/cid')
-const { getAbsoluteServerUrl } = require('@strapi/utils') // eslint-disable-line
+const { getAbsoluteServerUrl } = require('@strapi/utils')
 
 class Ipfs {
   /** @private */
@@ -10,8 +11,8 @@ class Ipfs {
     const { web3storageGateway } = config.get('plugin.ceramic-feed')
     const client = httpFactory({
       baseURL: web3storageGateway,
-      headers: { // TODO: remove hard code after updated cf worker deploy
-        'Origin': 'https://localhost' // getAbsoluteServerUrl(config)
+      headers: {
+        'Origin': trimEnd(getAbsoluteServerUrl(config), '/')
       }
     })
 
