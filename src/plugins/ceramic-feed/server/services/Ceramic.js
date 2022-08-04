@@ -1,4 +1,6 @@
-const schema = require('../content-types/ceramic-post/schema')
+const axios = require('axios')
+
+const { schema, relations } = require('../content-types/ceramic-post/datagram')
 const { CeramicClient } = require('./ceramic/CeramicClient')
 
-module.exports = ({ strapi }) => new CeramicClient(strapi, schema);
+module.exports = ({ strapi }) => new CeramicClient(strapi, axios.create, schema, relations);

@@ -13,51 +13,80 @@ module.exports = {
     id: {
       edit: {},
       list: {
-        label: 'id',
+        label: 'ID',
         searchable: true,
         sortable: true
       }
     },
     title: {
       edit: {
-        label: 'title',
-        description: '',
+        label: 'Post title',
+        description: 'Your post title',
         placeholder: '',
         visible: true,
         editable: true
       },
       list: {
-        label: 'title',
+        label: 'Post title',
         searchable: true,
         sortable: true
       }
     },
     content: {
       edit: {
-        label: 'content',
-        description: '',
+        label: 'Post content',
+        description: 'A short brief you want to share',
         placeholder: '',
         visible: true,
         editable: true
       },
       list: {
-        label: 'content',
+        label: 'Post content',
         searchable: false,
         sortable: false
       }
     },
     picture: {
       edit: {
-        label: 'picture',
-        description: '',
+        label: 'Landing picture',
+        description: 'A picture above the post\'s title (optional)',
         placeholder: '',
         visible: true,
         editable: true
       },
       list: {
-        label: 'picture',
+        label: 'Landing picture',
         searchable: false,
         sortable: false
+      }
+    },
+    sponsored: {
+      edit: {
+        label: 'Sponsored by',
+        description: 'A sponsor logo with the link in the footer (optional)',
+        placeholder: '',
+        visible: true,
+        editable: true,
+        mainField: 'link'
+      },
+      list: {
+        label: 'sponsored',
+        searchable: true,
+        sortable: true
+      }
+    },
+    link: {
+      edit: {
+        label: 'URL',
+        description: 'A link to the full article',
+        placeholder: '',
+        visible: true,
+        editable: true,
+      },
+      list: {
+        label: 'URL',
+        searchable: true,
+        sortable: true
       }
     },
     cid: {
@@ -65,7 +94,7 @@ module.exports = {
         label: 'cid',
         description: '',
         placeholder: '',
-        visible: true,
+        visible: false,
         editable: false
       },
       list: {
@@ -76,28 +105,28 @@ module.exports = {
     },
     createdAt: {
       edit: {
-        label: 'createdAt',
+        label: 'Created At',
         description: '',
         placeholder: '',
         visible: false,
         editable: true
       },
       list: {
-        label: 'createdAt',
+        label: 'Created At',
         searchable: true,
         sortable: true
       }
     },
     updatedAt: {
       edit: {
-        label: 'updatedAt',
+        label: 'Updated At',
         description: '',
         placeholder: '',
         visible: false,
         editable: true
       },
       list: {
-        label: 'updatedAt',
+        label: 'Updated At',
         searchable: true,
         sortable: true
       }
@@ -107,10 +136,10 @@ module.exports = {
     edit: [
       [{
         name: 'title',
-        size: 8
+        size: 12
       }, {
-        name: 'cid',
-        size: 4
+        name: 'link',
+        size: 12
       }],
       [{
         name: 'picture',
@@ -121,7 +150,7 @@ module.exports = {
         size: 12
       }]
     ],
-    editRelations: [],
-    list: ['id', 'title', 'picture', 'cid']
+    editRelations: ['sponsored'],
+    list: ['id', 'title', 'link', 'picture']
   }
 }

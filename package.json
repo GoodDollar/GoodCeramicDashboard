@@ -1,29 +1,49 @@
 {
   "name": "good-ceramic-dashboard",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.9.0",
   "description": "A Strapi application",
   "scripts": {
     "develop": "strapi develop",
     "start": "strapi start",
     "build": "strapi build",
     "strapi": "strapi",
+    "prepare": "husky install",
+    "lint": "eslint \"src/plugins/ceramic-feed/**/*.js\" \"config/*.js\" --max-warnings=0",
+    "lint:fix": "npm run lint -- --fix",
     "generate:ceramic:seed": "node src/plugins/ceramic-feed/cli/commands/generate-seed.js",
     "client:settings": "node src/plugins/ceramic-feed/cli/commands/client-settings.js"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "eslint": "^8.16.0",
+    "husky": "^8.0.1",
+    "lint-staged": "^12.4.1"
+  },
   "dependencies": {
-    "@ceramicnetwork/http-client": "^1.5.7",
-    "@ceramicnetwork/stream-tile": "^1.5.7",
-    "@strapi/plugin-i18n": "4.1.3",
-    "@strapi/plugin-users-permissions": "4.1.3",
-    "@strapi/strapi": "4.1.3",
-    "dids": "^2.4.3",
-    "form-data": "^4.0.0",
-    "key-did-provider-ed25519": "^1.1.0",
-    "key-did-resolver": "^1.4.4",
-    "sqlite3": "5.0.2",
-    "uint8arrays": "^3.0.0"
+    "@ceramicnetwork/http-client": "^2.0.4",
+    "@ceramicnetwork/stream-tile": "^2.1.3",
+    "@strapi/plugin-i18n": "4.1.11",
+    "@strapi/plugin-users-permissions": "4.1.11",
+    "@strapi/provider-upload-aws-s3": "^4.1.11",
+    "@strapi/strapi": "4.1.11",
+    "async-lock": "^1.3.1",
+    "dids": "^3.1.0",
+    "key-did-provider-ed25519": "^2.0.0",
+    "key-did-resolver": "^2.0.4",
+    "pg": "^8.7.3",
+    "sqlite3": "5.0.8",
+    "uint8arrays": "^3.0.0",
+    "form-data": "^4.0.0"
+  },
+  "lint-staged": {
+    "src/plugins/ceramic-feed/**/*.js": [
+      "eslint --fix --max-warnings=0",
+      "git add"
+    ],
+    "config/*.js": [
+      "eslint --fix --max-warnings=0",
+      "git add"
+    ]
   },
   "author": {
     "name": "A Strapi developer"

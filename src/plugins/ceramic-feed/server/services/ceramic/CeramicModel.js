@@ -1,15 +1,20 @@
-const { assign, isEmpty, get } = require('lodash')
-const { array } = require('../../utils')
-
-const { TileDocument } = require('@ceramicnetwork/stream-tile')
+const AsyncLock = require('async-lock')
+const { assign, isEmpty, get, last } = require('lodash')
+const { array, string } = require('../../utils')
 
 class CeramicModel {
+  static tile = null;
+
   static ceramic = null;
 
   static family = null;
 
+  static mutex = new AsyncLock();
+
   static async load(id) {
-    return TileDocument.load(this.ceramic, id)
+    const { ceramic, tile  } = this
+
+    return tile.load(ceramic, id)
   }
 
   /** Checks is document published (by checking the index doc) */
@@ -22,8 +27,9 @@ class CeramicModel {
 
   /** Creates new Ceramic document */
   static async create(content, tags = []) {
+    const { ceramic, tile } = this
     const metadata = this._createMetadata(tags)
-    const newDocument = await TileDocument.create(this.ceramic, content, metadata)
+    const newDocument = await tile.create(ceramic, content, metadata)
 
     return newDocument
   }
@@ -105,7 +111,7 @@ class CeramicModel {
     const tagName = `${forLiveIndex ? 'live-' : ''}indexes`
     const index = await this._deterministic([tagName])
 
-    if (isEmpty(index.content) && !forLiveIndex) {
+    if (isEmpty(index.content)) {
       await index.update({ items: [] })
     }
 
@@ -134,17 +140,40 @@ class CeramicModel {
 
   /** @private */
   static async _updateLiveIndexes(id, action) {
-    const indexDocument = await this.getLiveIndex();
+    const item = String(id)
+    const { ceramic, mutex, family } = this
+    const { id: publisher } = ceramic.did
 
-    await indexDocument.update({ action, item: String(id) })
+    await mutex.acquire(family, async () => {
+      const indexDocument = await this.getLiveIndex();
+      const { items } = indexDocument.content
+      const { id: lastHistoryId } = last(items) || {}
+
+      const historyIdSource = [
+        item,
+        action,
+        Date.now(),
+        String(publisher)
+      ]
+
+      if (lastHistoryId) {
+        historyIdSource.push(lastHistoryId)
+      }
+
+      const newHistoryId = string.sha1(historyIdSource.join(''))
+      const newHistoryRecord = { id: newHistoryId, action, item }
+      const newHistoryPatch = { op: "add", path: "/items/-", value: newHistoryRecord }
+
+      await indexDocument.patch([newHistoryPatch])
+    })
   }
 
   /** @private */
   static async _deterministic(tags) {
-    const { ceramic, family } = this
+    const { ceramic, family, tile } = this
     const { id: controller } = ceramic.did
 
-    return TileDocument.deterministic(ceramic, {
+    return tile.deterministic(ceramic, {
       // A single controller must be provided to reference a deterministic document
       controllers: [controller],
       // A family or tag must be provided in addition to the controller

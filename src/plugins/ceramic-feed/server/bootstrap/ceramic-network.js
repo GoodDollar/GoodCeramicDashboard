@@ -1,13 +1,13 @@
-const { DID } = require('dids')
 const { assign } = require('lodash')
 const { fromString } = require('uint8arrays')
-const { getResolver } = require('key-did-resolver')
-const { CeramicClient } = require('@ceramicnetwork/http-client')
-const { Ed25519Provider } = require('key-did-provider-ed25519')
 
+const { importCeramic } = require('./imports')
 const CeramicModel = require('../services/ceramic/CeramicModel')
 
 module.exports = async (ceramicNodeURL, ceramicDIDSeed) => {
+  const { DID, getResolver, Ed25519Provider, CeramicClient, TileDocument } = await importCeramic()
+
+  const tile = TileDocument
   const ceramic = new CeramicClient(ceramicNodeURL)
   const key = fromString(ceramicDIDSeed, 'base16')
 
@@ -22,5 +22,5 @@ module.exports = async (ceramicNodeURL, ceramicDIDSeed) => {
   assign(ceramic, { did })
 
   // supply ceramic instance to CeramicModel
-  assign(CeramicModel, { ceramic })
+  assign(CeramicModel, { ceramic, tile })
 }
