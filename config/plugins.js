@@ -8,6 +8,7 @@ module.exports = ({ env }) => ({
       ceramicDIDSeed: env('CERAMIC_DID_SEED'),
       pinataApiKey: env('PINATA_API_KEY'),
       pinataSecret: env('PINATA_SECRET'),
+      web3storageGateway: env('WEB3STORAGE_GATEWAY', 'https://ipfsgateway.goodworker.workers.dev'),
     },
   },
   // ...

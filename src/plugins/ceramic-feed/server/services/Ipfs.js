@@ -6,14 +6,14 @@ const FormData = require('form-data');
 class Ipfs {
   /** @private */
   constructor(config) {
-    this.ipfsGateway = config.ipfsGateway
+    this.web3storageGateway = config.web3storageGateway
   }
 
   async store(filePath) {
     const stream = createReadStream(filePath)
     const formData = new FormData()
     formData.append('file',stream)
-    const { data } = await axios.post(this.ipfsGateway,formData,
+    const { data } = await axios.post(this.web3storageGateway,formData,
       {headers: {
           'Origin':'https://localhost',
           ...formData.getHeaders()
