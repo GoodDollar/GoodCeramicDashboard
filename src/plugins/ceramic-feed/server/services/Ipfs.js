@@ -2,14 +2,16 @@ const { createReadStream } = require('fs')
 const axios = require('axios');
 const FormData = require('form-data');
 const  { CID } = require('multiformats/cid')
+const { getAbsoluteServerUrl } = require('@strapi/utils') // eslint-disable-line
 
 class Ipfs {
   /** @private */
-  constructor(config, httpFactory) {
+  constructor(httpFactory, config) {
+    const { web3storageGateway } = config.get('plugin.ceramic-feed')
     const client = httpFactory({
-      baseURL: config.web3storageGateway,
-      headers: {
-        'Origin': 'https://localhost' // the worker checks for specific origins
+      baseURL: web3storageGateway,
+      headers: { // TODO: remove hard code after updated cf worker deploy
+        'Origin': 'https://localhost' // getAbsoluteServerUrl(config)
       }
     })
 
@@ -31,9 +33,4 @@ class Ipfs {
   }
 }
 
-module.exports = ({ strapi }) => {
-  const { config } = strapi
-  const ipfsConfig = config.get('plugin.ceramic-feed')
-
-  return new Ipfs(ipfsConfig, axios.create)
-};
+module.exports = ({ strapi }) => new Ipfs(axios.create, strapi.config);
