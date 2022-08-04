@@ -1,6 +1,7 @@
 const { createReadStream } = require('fs')
 const axios = require('axios');
 const FormData = require('form-data');
+const  { CID } = require('multiformats/cid')
 
 class Ipfs {
   /** @private */
@@ -26,7 +27,7 @@ class Ipfs {
       headers: payload.getHeaders()
     })
 
-    return cid
+    return CID.parse(cid).toV1().toString()
   }
 }
 
