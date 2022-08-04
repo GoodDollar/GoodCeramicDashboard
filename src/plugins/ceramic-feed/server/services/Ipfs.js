@@ -1,30 +1,33 @@
 const { createReadStream } = require('fs')
-const { get } = require('lodash')
-const PinataSDK = require('@pinata/sdk')
+const axios = require('axios');
+const FormData = require('form-data');
+const  { CID } = require('multiformats/cid')
 
 class Ipfs {
   /** @private */
-  ipfs = null
+  constructor(config, httpFactory) {
+    const client = httpFactory({
+      baseURL: config.web3storageGateway,
+      headers: {
+        'Origin': 'https://localhost' // the worker checks for specific origins
+      }
+    })
 
-  /** @private */
-  ipfsOptions = {
-    pinataOptions: {
-      cidVersion: 0
-    }
-  }
-
-  constructor(ipfsFactory, config) {
-    const { pinataApiKey, pinataSecret } = config
-
-    this.ipfs = ipfsFactory(pinataApiKey, pinataSecret)
+    client.interceptors.response.use(({ data }) => data)
+    this.client = client
   }
 
   async store(filePath) {
-    const { ipfs, ipfsOptions } = this
     const stream = createReadStream(filePath)
-    const response = await ipfs.pinFileToIPFS(stream, ipfsOptions)
+    const payload = new FormData()
 
-    return get(response, 'IpfsHash')
+    payload.append('file', stream)
+
+    const { cid } = await this.client.post('/', payload, {
+      headers: payload.getHeaders()
+    })
+
+    return CID.parse(cid).toV1().toString()
   }
 }
 
@@ -32,5 +35,5 @@ module.exports = ({ strapi }) => {
   const { config } = strapi
   const ipfsConfig = config.get('plugin.ceramic-feed')
 
-  return new Ipfs(PinataSDK, ipfsConfig)
+  return new Ipfs(ipfsConfig, axios.create)
 };
