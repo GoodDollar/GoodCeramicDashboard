@@ -236,7 +236,6 @@ const LifecycleHooks = new class {
     try {
       return await callback(this.ceramic)
     } catch (e) {
-      console.error(e)
       throw new ApplicationError('Ceramic Network sync failed. Please try again later...')
     }
   }
