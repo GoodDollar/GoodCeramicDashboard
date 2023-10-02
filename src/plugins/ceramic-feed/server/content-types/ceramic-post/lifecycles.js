@@ -1,5 +1,4 @@
 const { assign, pick, map, mapValues, mapKeys, filter, isEmpty, isPlainObject, bindAll } = require('lodash')
-
 const { ApplicationError } = require('@strapi/utils').errors;
 const { metadata, array } = require('../../utils')
 
@@ -10,6 +9,7 @@ const { resolveMediaFieldsPaths, makePopulate } = metadata
 const POSTS = 'plugin::ceramic-feed.ceramic-post'
 
 const LifecycleHooks = new class {
+  
   get ceramic() {
     const { strapi } = this
 
@@ -43,7 +43,7 @@ const LifecycleHooks = new class {
     const { _callCeramic } = this
     const entity = await this._loadEntity(event)
 
-    const { cid, publishedAt } = entity
+    const { cid,orbisId, publishedAt } = entity
     const published = publishedAt instanceof Date ? publishedAt.toISOString() : publishedAt
 
     // on publish we have to pre-fill
@@ -51,23 +51,33 @@ const LifecycleHooks = new class {
     const payload = await this._readPayload(entity)
     .then(data => ({ ...data, published }))
 
+    console.log("onUpdate",payload)
     // if Ceramic ID was set - update doc (with latest data)
     // and publish (by writing 'updated' event to the changelog)
     if (cid) {
       await _callCeramic(async ceramic => {
-        await ceramic.updateAndPublish(cid, payload)
+        await ceramic.updateAndPublish(cid,orbisId, payload)
       })
-
+      
+      if(!orbisId)
+      {
+        console.log("no orbis id...")
+        const extra = await _callCeramic(async ceramic => ceramic.syncOrbis(payload))
+        const { data } = event.params
+        console.log("onpublish orbis sync",{data,extra})
+        // prefill data with Ceramic ID newly generated
+        event.params.data = {...data, ...extra}
+      }
       return
     }
-
     // if no Ceramic ID in document - create document
     // and write 'added' event to the changelog
-    const document = await _callCeramic(async ceramic => ceramic.createAndPublish(payload))
+    const extra = await _callCeramic(async ceramic => ceramic.createAndPublish(payload))
     const { data } = event.params
-
+    
     // prefill data with Ceramic ID newly generated
-    data.cid = String(document.id)
+    event.params.data = {...data, ...extra}
+    console.log("updating event to:",event.params.data)
   }
 
   async onUpdate(event) {
@@ -88,7 +98,7 @@ const LifecycleHooks = new class {
     }
 
     const entity = await this._loadEntity(event)
-    const { publishedAt, cid } = entity
+    const { publishedAt, cid, orbisId } = entity
 
     // if 'publishedAt' present in DOCUMENT (but absent in UPDATE PAYLOAD) that means
     // the published document was updated and nees to be also updated in Ceramic
@@ -97,8 +107,17 @@ const LifecycleHooks = new class {
       const payload = await this._readPayload(entity)
 
       await _callCeramic(async ceramic => {
-        await ceramic.updateAndPublish(cid, payload)
+        await ceramic.updateAndPublish(cid, orbisId, payload)
       })
+
+      if(!orbisId)
+      {
+        const extra = await _callCeramic(async ceramic => ceramic.syncOrbis(payload))
+        const { data } = event.params
+        console.log("orbis sync:",{data, extra})
+        // prefill data with Ceramic ID newly generated
+        event.params.data = {...data, ...extra}
+      }
     }
 
     // if no 'publishedAt' present in DOCUMENT then means the DRAFT was updated we're skipping
@@ -112,13 +131,13 @@ const LifecycleHooks = new class {
     let ids
 
     if (('data' in params) && ('cid' in data)) {
-      ids = [data.cid]
+      ids = [[data.cid, data.orbisId]]
     } else {
       // getting ceramic IDs querying posts table
       // by id/ids got from event's where conditions
       ids = await posts
-        .findMany({ select: ['cid'], where })
-        .then(records => map(records, 'cid'))
+        .findMany({ select: ['cid','orbisId'], where })
+        .then(records => map(records, _ => ([_.cid,_.orbisId])))
     }
 
     ids = filter(ids)
@@ -129,7 +148,7 @@ const LifecycleHooks = new class {
 
     await _callCeramic(async ceramic => {
       // unpublishing document by ceramic ID
-      await withArray(ids, async id => ceramic.unpublish(id))
+      await withArray(ids, async id => ceramic.unpublish(id[0],id[1]))
     })
   }
 

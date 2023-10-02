@@ -6,8 +6,8 @@ module.exports = {
     searchable: true,
     pageSize: 10,
     mainField: 'title',
-    defaultSortBy: 'title',
-    defaultSortOrder: 'ASC'
+    defaultSortBy: 'id',
+    defaultSortOrder: 'DESC'
   },
   metadatas: {
     id: {
@@ -99,6 +99,20 @@ module.exports = {
       },
       list: {
         label: 'cid',
+        searchable: true,
+        sortable: true
+      }
+    },
+    orbisId: {
+      edit: {
+        label: 'orbisId',
+        description: 'Orbis document id',
+        placeholder: '',
+        visible: false,
+        editable: false
+      },
+      list: {
+        label: 'orbisId',
         searchable: true,
         sortable: true
       }

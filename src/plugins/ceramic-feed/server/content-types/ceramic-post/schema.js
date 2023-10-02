@@ -55,6 +55,13 @@ module.exports = {
       private: true,
       unique: true,
       configurable: false,
+    },
+    // reference to the ceramic document ID stored via Orbis    
+    orbisId: {
+      type: 'string',
+      private: true,
+      unique: true,
+      configurable: false,
     }
   }
 }
