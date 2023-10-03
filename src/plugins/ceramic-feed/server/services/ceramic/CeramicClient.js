@@ -1,11 +1,11 @@
-const {assign, clone, toPairs} = require('lodash')
-const {basename} = require('path')
-const {URL} = require('url')
-const LocalStorage = require("localstorage-memory")
+const { assign, clone, toPairs } = require('lodash')
+const { basename } = require('path')
+const { URL } = require('url')
+const LocalStorage = require('localstorage-memory')
 
 const CeramicModel = require('./CeramicModel')
-const {metadata, filesystem} = require('../../utils')
-const {withArray} = require('../../utils/async')
+const { metadata, filesystem } = require('../../utils')
+const { withArray } = require('../../utils/async')
 
 global.localStorage = LocalStorage //required for orbis
 
@@ -18,36 +18,40 @@ class CeramicClient {
   http = null
   mediaFields = null
   orbisSdk = null
+  orbisReady = null
 
   constructor(strapi, httpFactory, schema, relatedSchemas) {
-    const {_getMediaFields} = this
-    const {relatedFieldName} = metadata
+    const { _getMediaFields } = this
+    const { relatedFieldName } = metadata
 
     const ipfs = strapi.service('plugin::ceramic-feed.ipfs')
-    const http = httpFactory({responseType: 'arraybuffer'})
+    const http = httpFactory({ responseType: 'arraybuffer' })
 
     const mediaFields = toPairs(relatedSchemas).reduce(
       (fields, [field, relatedSchema]) => {
         const relatedMedia = _getMediaFields(relatedSchema)
 
-        return [...fields, relatedMedia.map(
-          relatedField => relatedFieldName(field, relatedField)
-        )]
+        return [
+          ...fields,
+          relatedMedia.map(relatedField =>
+            relatedFieldName(field, relatedField)
+          )
+        ]
       },
       _getMediaFields(schema)
     )
 
-    http.interceptors.response.use(({data}) => Buffer.from(data, 'binary'))
+    http.interceptors.response.use(({ data }) => Buffer.from(data, 'binary'))
 
-    this.initOrbis(strapi)
+    this.orbisReady = this.initOrbis(strapi)
 
-    assign(this, {ipfs, http, mediaFields})
+    assign(this, { ipfs, http, mediaFields })
   }
 
   async initOrbis(strapi) {
-    const {config} = strapi
-    const {ceramicDIDSeed, orbisContext} = config.get('plugin.ceramic-feed')
-    const {Orbis} = await import("@orbisclub/orbis-sdk")
+    const { config } = strapi
+    const { ceramicDIDSeed, orbisContext } = config.get('plugin.ceramic-feed')
+    const { Orbis } = await import('@orbisclub/orbis-sdk')
 
     const sdk = new Orbis()
     await sdk.connectWithSeed(ceramicDIDSeed.slice(0, 32))
@@ -56,51 +60,62 @@ class CeramicClient {
   }
 
   async syncOrbis(payload) {
+    await this.orbisReady
     const content = await this._getContent(payload)
 
     const orbisFormat = this._orbisFormatContent(content)
-    const {doc} = await this.orbisSdk.createPost(orbisFormat)
-    console.log("syncing orbis...", doc)
-    return {orbisId: String(doc)}
+    const { doc } = await this.orbisSdk.createPost(orbisFormat)
+    return { orbisId: String(doc) }
   }
 
   async createAndPublish(payload) {
+    await this.orbisReady
     const content = await this._getContent(payload)
 
     const orbisFormat = this._orbisFormatContent(content)
-    const {doc} = await this.orbisSdk.createPost(orbisFormat)
-    const {id} = await Post.createAndPublish(content)
-    return {cid: String(id), orbisId: String(doc)}
+    const { doc } = await this.orbisSdk.createPost(orbisFormat)
+    const { id } = await Post.createAndPublish(content)
+    return { cid: String(id), orbisId: String(doc) }
   }
 
-
   async updateAndPublish(id, orbisId, payload) {
+    await this.orbisReady
     const content = await this._getContent(payload)
     const document = await Post.load(id)
 
     const orbisFormat = this._orbisFormatContent(content)
 
-    return Promise.all([orbisId && this.orbisSdk.editPost(orbisId, orbisFormat), Post.updateAndPublish(document, content)])
+    return Promise.all([
+      orbisId && this.orbisSdk.editPost(orbisId, orbisFormat),
+      Post.updateAndPublish(document, content)
+    ])
   }
 
   async unpublish(id, orbisId) {
-    return Promise.all([orbisId && this.orbisSdk.deletePost(orbisId), Post.unpublish(id)])
+    await this.orbisReady
+    return Promise.all([
+      orbisId && this.orbisSdk.deletePost(orbisId),
+      Post.unpublish(id)
+    ])
   }
 
   _orbisFormatContent(ceramicContent) {
     const { orbisContext: context } = this
-    const {title, content, ...data} = ceramicContent
+    const { title, content, tags, ...data } = ceramicContent
     return {
       context,
-      title, body: content, data
+      tags,
+      title,
+      body: content,
+      data
     }
   }
   /**
    * @private
    * Transforms json payload to the document's content
-  */
+   */
   async _getContent(payload) {
-    const {ipfs, mediaFields} = this
+    const { ipfs, mediaFields } = this
     const content = clone(payload)
 
     // loop over media (file upload) fields
@@ -117,12 +132,12 @@ class CeramicClient {
       if (filePath) {
         fieldValue = await this._withMediaFilePath(filePath, async path =>
           filesystem.isImageSVG(path)
-            // if image is SVG - read and store to Ceramic 'as is'
-            ? filesystem.getFileContents(path)
-            // if image isn't SVG - upload to IPFS
-            // and store CID in document's content
-            // otherwise (e.g. image was removed) set CID to null
-            : ipfs.store(path)
+            ? // if image is SVG - read and store to Ceramic 'as is'
+              filesystem.getFileContents(path)
+            : // if image isn't SVG - upload to IPFS
+              // and store CID in document's content
+              // otherwise (e.g. image was removed) set CID to null
+              ipfs.store(path)
         )
       }
 
@@ -134,14 +149,14 @@ class CeramicClient {
 
   /** @private */
   _getMediaFields(schema) {
-    const {mediaFields} = metadata.getFieldsNames(schema)
+    const { mediaFields } = metadata.getFieldsNames(schema)
 
     return mediaFields
   }
 
   /** @private */
   async _withMediaFilePath(urlOrPath, callback) {
-    const {http} = this
+    const { http } = this
     const path = urlOrPath
     let url
 
@@ -162,4 +177,4 @@ class CeramicClient {
   }
 }
 
-module.exports = {CeramicClient, Post}
+module.exports = { CeramicClient, Post }

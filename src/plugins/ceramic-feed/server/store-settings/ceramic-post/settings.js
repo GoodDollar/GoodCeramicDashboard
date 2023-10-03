@@ -49,7 +49,7 @@ module.exports = {
     picture: {
       edit: {
         label: 'Landing picture',
-        description: 'A picture above the post\'s title (optional)',
+        description: "A picture above the post's title (optional)",
         placeholder: '',
         visible: true,
         editable: true
@@ -58,6 +58,30 @@ module.exports = {
         label: 'Landing picture',
         searchable: false,
         sortable: false
+      }
+    },
+    publishWallet: {
+      edit: {
+        label: 'Publish to wallet',
+        visible: true,
+        editable: true
+      },
+      list: {
+        label: 'Publish to wallet',
+        searchable: true,
+        sortable: true
+      }
+    },
+    publishDapp: {
+      edit: {
+        label: 'Publish to GoodDapp',
+        visible: true,
+        editable: true
+      },
+      list: {
+        label: 'GoodDapp',
+        searchable: true,
+        sortable: true
       }
     },
     sponsored: {
@@ -81,7 +105,7 @@ module.exports = {
         description: 'A link to the full article',
         placeholder: '',
         visible: true,
-        editable: true,
+        editable: true
       },
       list: {
         label: 'URL',
@@ -148,23 +172,47 @@ module.exports = {
   },
   layouts: {
     edit: [
-      [{
-        name: 'title',
-        size: 12
-      }, {
-        name: 'link',
-        size: 12
-      }],
-      [{
-        name: 'picture',
-        size: 12
-      }],
-      [{
-        name: 'content',
-        size: 12
-      }]
+      [
+        {
+          name: 'title',
+          size: 12
+        },
+        {
+          name: 'link',
+          size: 12
+        }
+      ],
+      [
+        {
+          name: 'picture',
+          size: 12
+        }
+      ],
+      [
+        {
+          name: 'content',
+          size: 12
+        }
+      ],
+      [
+        {
+          name: 'publishWallet',
+          size: 12
+        }
+      ],
+      [
+        {
+          name: 'publishDapp',
+          size: 12
+        }
+      ],
+      [
+        {
+          name: 'sponsored',
+          size: 12
+        }
+      ]
     ],
-    editRelations: ['sponsored'],
     list: ['id', 'title', 'link', 'picture']
   }
 }
