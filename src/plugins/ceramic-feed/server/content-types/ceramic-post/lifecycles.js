@@ -265,10 +265,13 @@ const LifecycleHooks = new (class {
 })(strapi, schema, relations)
 
 module.exports = {
-  // async beforeUpdate(event) {
-  //   return LifecycleHooks.onUpdate(event)
-  // },
   async afterUpdate(event) {
+    // skipping if this is us just updating ceramic/orbis ids after update
+    const skip = event.params.data.cid && event.params.data.orbisId
+    if (skip) {
+      console.log('skipping ids update...')
+      return
+    }
     LifecycleHooks.onAfterUpdate(event)
   },
   // we still need to listen for delete events

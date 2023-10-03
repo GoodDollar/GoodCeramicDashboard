@@ -54,7 +54,8 @@ class CeramicClient {
     const { Orbis } = await import('@orbisclub/orbis-sdk')
 
     const sdk = new Orbis()
-    await sdk.connectWithSeed(ceramicDIDSeed.slice(0, 32))
+    const connected = await sdk.connectWithSeed(ceramicDIDSeed.slice(0, 32))
+    console.log('orbis connected:', connected)
     this.orbisSdk = sdk
     this.orbisContext = orbisContext
   }
@@ -75,7 +76,9 @@ class CeramicClient {
     const orbisFormat = this._orbisFormatContent(content)
     const { doc } = await this.orbisSdk.createPost(orbisFormat)
     const { id } = await Post.createAndPublish(content)
-    return { cid: String(id), orbisId: String(doc) }
+    const result = { cid: String(id), orbisId: String(doc) }
+    console.log('ceramic/orbis create result:', result)
+    return result
   }
 
   async updateAndPublish(id, orbisId, payload) {
@@ -85,10 +88,12 @@ class CeramicClient {
 
     const orbisFormat = this._orbisFormatContent(content)
 
-    return Promise.all([
+    const result = await Promise.all([
       orbisId && this.orbisSdk.editPost(orbisId, orbisFormat),
       Post.updateAndPublish(document, content)
     ])
+    console.log('ceramic/orbis update result:', result)
+    return result
   }
 
   async unpublish(id, orbisId) {
