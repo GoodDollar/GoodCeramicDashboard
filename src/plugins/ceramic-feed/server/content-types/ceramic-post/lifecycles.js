@@ -51,17 +51,20 @@ const LifecycleHooks = new (class {
   async onPublish(entity) {
     const { _callCeramic, entityService } = this
 
-    const { cid, orbisId, publishedAt } = entity
+    const { cid, orbisId, publishedAt, updatedAt } = entity
     const published =
       publishedAt instanceof Date ? publishedAt.toISOString() : publishedAt
-
+    const updated =
+      updatedAt instanceof Date ? updatedAt.toISOString() : updatedAt
     // on publish we have to pre-fill
     // or update 'published' date field
     const payload = await this._readPayload(entity).then(data => ({
       ...data,
-      published
+      published,
+      updated
     }))
 
+    console.log('onPublish payload:', payload)
     // if Ceramic ID was set - update doc (with latest data)
     // and publish (by writing 'updated' event to the changelog)
     if (cid) {
@@ -156,7 +159,7 @@ const LifecycleHooks = new (class {
 
     const payload = pick(
       entity,
-      array.remove(fields, ['publishWallet', 'publishDapp']) //converting to tags
+      array.remove(fields, 'publishWallet', 'publishDapp') //converting to tags
     )
 
     //handle tags for orbis
@@ -266,8 +269,13 @@ const LifecycleHooks = new (class {
 
 module.exports = {
   async afterUpdate(event) {
+    console.log('afterUpdate', event)
     // skipping if this is us just updating ceramic/orbis ids after update
-    const skip = event.params.data.cid && event.params.data.orbisId
+    const skip =
+      //updatedAt, orbisId, cid
+      Object.keys(event.params.data).length <= 3 &&
+      event.params.data.cid &&
+      event.params.data.orbisId
     if (skip) {
       console.log('skipping ids update...')
       return
