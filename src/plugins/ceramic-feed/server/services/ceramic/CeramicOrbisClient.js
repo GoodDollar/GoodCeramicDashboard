@@ -12,8 +12,10 @@ global.localStorage = LocalStorage //required for orbis
 class Post extends CeramicModel {
   static family = 'Post'
 }
-
-class CeramicClient {
+/**
+ * handle saving posts to custom ceramic model(depracated) + newer orbis service
+ */
+class CeramicOrbisClient {
   ipfs = null
   http = null
   mediaFields = null
@@ -49,13 +51,15 @@ class CeramicClient {
   }
 
   async initOrbis(strapi) {
+    const { Orbis } = await import('@orbisclub/orbis-sdk')
+
     const { config } = strapi
     const { ceramicDIDSeed, orbisContext } = config.get('plugin.ceramic-feed')
-    const { Orbis } = await import('@orbisclub/orbis-sdk')
 
     const sdk = new Orbis()
     const connected = await sdk.connectWithSeed(ceramicDIDSeed.slice(0, 32))
     console.log('orbis connected:', connected)
+
     this.orbisSdk = sdk
     this.orbisContext = orbisContext
   }
@@ -182,4 +186,4 @@ class CeramicClient {
   }
 }
 
-module.exports = { CeramicClient, Post }
+module.exports = { CeramicOrbisClient, Post }

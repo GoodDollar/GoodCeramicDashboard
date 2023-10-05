@@ -18,6 +18,13 @@ const { schema, relations } = require('./datagram')
 const { resolveMediaFieldsPaths, makePopulate } = metadata
 const POSTS = 'plugin::ceramic-feed.ceramic-post'
 
+// boolean fields that should be converted to tags
+const PUBLISH_TAGS = ['publishWallet', 'publishDapp']
+const PUBLISH_TAGS_TITLES = {
+  publishWallet: 'Publish on goodwallet',
+  publishDapp: 'Publish on gooddapp'
+}
+
 const LifecycleHooks = new (class {
   get ceramic() {
     const { strapi } = this
@@ -159,23 +166,19 @@ const LifecycleHooks = new (class {
 
     const payload = pick(
       entity,
-      array.remove(fields, 'publishWallet', 'publishDapp') //converting to tags
+      array.remove(fields, ...PUBLISH_TAGS) //converting to tags
     )
 
     //handle tags for orbis
-    if (fields.includes('publishWallet')) {
-      payload.tags = []
-      if (entity.publishWallet)
+    payload.tags = []
+    PUBLISH_TAGS.forEach(t => {
+      if (entity[t]) {
         payload.tags.push({
-          slug: 'publishWallet',
-          title: 'Publish on goodwallet'
+          slug: t,
+          title: PUBLISH_TAGS_TITLES[t]
         })
-      if (entity.publishDapp)
-        payload.tags.push({
-          slug: 'publishDapp',
-          title: 'Publish on gooddapp'
-        })
-    }
+      }
+    })
 
     await withArray(mediaFields, async field => {
       payload[field] = await this._loadAsset(payload, field)
@@ -270,12 +273,13 @@ const LifecycleHooks = new (class {
 module.exports = {
   async afterUpdate(event) {
     console.log('afterUpdate', event)
+    const {
+      params: { data }
+    } = event
     // skipping if this is us just updating ceramic/orbis ids after update
     const skip =
       //updatedAt, orbisId, cid
-      Object.keys(event.params.data).length <= 3 &&
-      event.params.data.cid &&
-      event.params.data.orbisId
+      Object.keys(data).length <= 3 && data.cid && data.orbisId
     if (skip) {
       console.log('skipping ids update...')
       return
