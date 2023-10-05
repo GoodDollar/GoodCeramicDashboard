@@ -118,7 +118,7 @@ module.exports = {
         label: 'cid',
         description: '',
         placeholder: '',
-        visible: false,
+        visible: true,
         editable: false
       },
       list: {
@@ -132,7 +132,7 @@ module.exports = {
         label: 'orbisId',
         description: 'Orbis document id',
         placeholder: '',
-        visible: false,
+        visible: true,
         editable: false
       },
       list: {
@@ -209,6 +209,18 @@ module.exports = {
       [
         {
           name: 'sponsored',
+          size: 12
+        }
+      ],
+      [
+        {
+          name: 'cid',
+          size: 12
+        }
+      ],
+      [
+        {
+          name: 'orbisId',
           size: 12
         }
       ]

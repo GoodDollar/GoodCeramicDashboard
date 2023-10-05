@@ -279,7 +279,7 @@ module.exports = {
     // skipping if this is us just updating ceramic/orbis ids after update
     const skip =
       //updatedAt, orbisId, cid
-      Object.keys(data).length <= 3 && data.cid && data.orbisId
+      Object.keys(data).length <= 3 && (data.cid || data.orbisId)
     if (skip) {
       console.log('skipping ids update...')
       return
