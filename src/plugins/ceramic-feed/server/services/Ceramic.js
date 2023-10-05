@@ -1,6 +1,7 @@
 const axios = require('axios')
 
 const { schema, relations } = require('../content-types/ceramic-post/datagram')
-const { CeramicClient } = require('./ceramic/CeramicClient')
+const { CeramicOrbisClient } = require('./ceramic/CeramicOrbisClient')
 
-module.exports = ({ strapi }) => new CeramicClient(strapi, axios.create, schema, relations);
+module.exports = ({ strapi }) =>
+  new CeramicOrbisClient(strapi, axios.create, schema, relations)

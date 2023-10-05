@@ -1,4 +1,4 @@
-const { join } = require('path');
+const { join } = require('path')
 const { get, mapValues, pick, fromPairs } = require('lodash')
 const { isValidURL } = require('./string')
 
@@ -9,10 +9,9 @@ module.exports = class {
     const { attributes } = schema
     const fields = Object.keys(attributes)
 
-    const [mediaFields, relationFields] = ['media', 'relation']
-      .map(type => fields.filter(field =>
-        type === get(attributes, `${field}.type`)
-      ))
+    const [mediaFields, relationFields] = ['media', 'relation'].map(type =>
+      fields.filter(field => type === get(attributes, `${field}.type`))
+    )
 
     const relations = mapValues(pick(attributes, relationFields), 'target')
 
@@ -33,13 +32,13 @@ module.exports = class {
 
       return isValidURL(url)
         ? url // if url is valid url (e.g. link to S3) - return it "as is"
-        // in other case url is path relative to the public dir
-        // so we building full path and mapping value with it
-        : join(dirs.public, url)
+        : // in other case url is path relative to the public dir
+          // so we building full path and mapping value with it
+          join(dirs.static.public, url)
     })
   }
 
   static makePopulate(fields) {
     return fromPairs(fields.map(field => [field, true]))
   }
-};
+}
