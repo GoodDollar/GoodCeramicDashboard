@@ -3,16 +3,16 @@ const { assign, isEmpty, get, last } = require('lodash')
 const { array, string } = require('../../utils')
 
 class CeramicModel {
-  static tile = null;
+  static tile = null
 
-  static ceramic = null;
+  static ceramic = null
 
-  static family = null;
+  static family = null
 
-  static mutex = new AsyncLock();
+  static mutex = new AsyncLock()
 
   static async load(id) {
-    const { ceramic, tile  } = this
+    const { ceramic, tile } = this
 
     return tile.load(ceramic, id)
   }
@@ -29,7 +29,9 @@ class CeramicModel {
   static async create(content, tags = []) {
     const { ceramic, tile } = this
     const metadata = this._createMetadata(tags)
-    const newDocument = await tile.create(ceramic, content, metadata)
+    const newDocument = await tile.create(ceramic, content, metadata, {
+      pin: true
+    })
 
     return newDocument
   }
@@ -132,7 +134,7 @@ class CeramicModel {
 
   /** @private */
   static async _updateIndexes(id, operation) {
-    const indexDocument = await this.getIndex();
+    const indexDocument = await this.getIndex()
     const { items = [] } = indexDocument.content
 
     await indexDocument.update({ items: array[operation](items, String(id)) })
@@ -145,16 +147,11 @@ class CeramicModel {
     const { id: publisher } = ceramic.did
 
     await mutex.acquire(family, async () => {
-      const indexDocument = await this.getLiveIndex();
+      const indexDocument = await this.getLiveIndex()
       const { items } = indexDocument.content
       const { id: lastHistoryId } = last(items) || {}
 
-      const historyIdSource = [
-        item,
-        action,
-        Date.now(),
-        String(publisher)
-      ]
+      const historyIdSource = [item, action, Date.now(), String(publisher)]
 
       if (lastHistoryId) {
         historyIdSource.push(lastHistoryId)
@@ -162,7 +159,11 @@ class CeramicModel {
 
       const newHistoryId = string.sha1(historyIdSource.join(''))
       const newHistoryRecord = { id: newHistoryId, action, item }
-      const newHistoryPatch = { op: "add", path: "/items/-", value: newHistoryRecord }
+      const newHistoryPatch = {
+        op: 'add',
+        path: '/items/-',
+        value: newHistoryRecord
+      }
 
       await indexDocument.patch([newHistoryPatch])
     })
@@ -173,14 +174,20 @@ class CeramicModel {
     const { ceramic, family, tile } = this
     const { id: controller } = ceramic.did
 
-    return tile.deterministic(ceramic, {
-      // A single controller must be provided to reference a deterministic document
-      controllers: [controller],
-      // A family or tag must be provided in addition to the controller
-      family,
-      tags
-    })
+    return tile.deterministic(
+      ceramic,
+      {
+        // A single controller must be provided to reference a deterministic document
+        controllers: [controller],
+        // A family or tag must be provided in addition to the controller
+        family,
+        tags
+      },
+      {
+        pin: true
+      }
+    )
   }
 }
 
-module.exports = CeramicModel;
+module.exports = CeramicModel
