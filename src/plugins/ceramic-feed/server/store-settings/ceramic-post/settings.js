@@ -72,6 +72,18 @@ module.exports = {
         sortable: true
       }
     },
+    publishWalletV2: {
+      edit: {
+        label: 'Publish to GoodWalletV2',
+        visible: true,
+        editable: true
+      },
+      list: {
+        label: 'Publish to GoodWalletV2',
+        searchable: true,
+        sortable: true
+      }
+    },
     publishDapp: {
       edit: {
         label: 'Publish to GoodDapp',
@@ -197,6 +209,12 @@ module.exports = {
       [
         {
           name: 'publishWallet',
+          size: 12
+        }
+      ],
+      [
+        {
+          name: 'publishWalletV2',
           size: 12
         }
       ],

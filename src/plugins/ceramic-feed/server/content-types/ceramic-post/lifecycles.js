@@ -19,10 +19,11 @@ const { resolveMediaFieldsPaths, makePopulate } = metadata
 const POSTS = 'plugin::ceramic-feed.ceramic-post'
 
 // boolean fields that should be converted to tags
-const PUBLISH_TAGS = ['publishWallet', 'publishDapp']
+const PUBLISH_TAGS = ['publishWallet', 'publishDapp', 'publishWalletV2']
 const PUBLISH_TAGS_TITLES = {
   publishWallet: 'Publish on goodwallet',
-  publishDapp: 'Publish on gooddapp'
+  publishDapp: 'Publish on gooddapp',
+  publishWalletV2: 'Publish on GoodWalletV2'
 }
 
 const LifecycleHooks = new (class {
@@ -88,12 +89,23 @@ const LifecycleHooks = new (class {
       }
       return
     }
+    console.log('onPublish no ceramic id, creating document...')
     // if no Ceramic ID in document - create document
     // and write 'added' event to the changelog
     const data = await _callCeramic(async ceramic =>
       ceramic.createAndPublish(payload)
     )
     entityService.update(POSTS, entity.id, { data })
+  }
+
+  async onBulkUpdate(event) {
+    const { params } = event
+    const { where } = params
+
+    const entities = await this.posts.findMany({ where })
+    return Promise.all(
+      entities.map(entity => this.onAfterUpdate({ result: entity }))
+    )
   }
 
   async onAfterUpdate(event) {
@@ -285,6 +297,10 @@ module.exports = {
       return
     }
     LifecycleHooks.onAfterUpdate(event)
+  },
+  async afterUpdateMany(event) {
+    console.log('afterUpdateMany', event)
+    return LifecycleHooks.onBulkUpdate(event)
   },
   // we still need to listen for delete events
   // because physical removal should also unpublish

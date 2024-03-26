@@ -47,6 +47,15 @@ module.exports = {
         defaultTo: true
       }
     },
+    publishWalletV2: {
+      type: 'boolean',
+      multiple: true,
+      required: true,
+      configurable: false,
+      column: {
+        defaultTo: true
+      }
+    },
     publishDapp: {
       type: 'boolean',
       multiple: true,
