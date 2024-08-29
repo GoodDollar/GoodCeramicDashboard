@@ -3,15 +3,15 @@ const { basename } = require('path')
 const { URL } = require('url')
 const LocalStorage = require('localstorage-memory')
 
-const CeramicModel = require('./CeramicModel')
+// const CeramicModel = require('./CeramicModel')
 const { metadata, filesystem } = require('../../utils')
 const { withArray } = require('../../utils/async')
 
 global.localStorage = LocalStorage //required for orbis
 
-class Post extends CeramicModel {
-  static family = 'Post'
-}
+// class Post extends CeramicModel {
+//   static family = 'Post'
+// }
 /**
  * handle saving posts to custom ceramic model(depracated) + newer orbis service
  */
@@ -79,8 +79,8 @@ class CeramicOrbisClient {
 
     const orbisFormat = this._orbisFormatContent(content)
     const { doc } = await this.orbisSdk.createPost(orbisFormat)
-    const { id } = await Post.createAndPublish(content)
-    const result = { cid: String(id), orbisId: String(doc) }
+    // const { id } = await Post.createAndPublish(content)
+    const result = { orbisId: String(doc) }
     console.log('ceramic/orbis create result:', result)
     return result
   }
@@ -88,13 +88,13 @@ class CeramicOrbisClient {
   async updateAndPublish(id, orbisId, payload) {
     await this.orbisReady
     const content = await this._getContent(payload)
-    const document = await Post.load(id)
+    // const document = await Post.load(id)
 
     const orbisFormat = this._orbisFormatContent(content)
 
     const result = await Promise.all([
-      orbisId && this.orbisSdk.editPost(orbisId, orbisFormat),
-      Post.updateAndPublish(document, content)
+      orbisId && this.orbisSdk.editPost(orbisId, orbisFormat)
+      // Post.updateAndPublish(document, content)
     ])
     console.log('ceramic/orbis update result:', result)
     return result
@@ -103,8 +103,8 @@ class CeramicOrbisClient {
   async unpublish(id, orbisId) {
     await this.orbisReady
     return Promise.all([
-      orbisId && this.orbisSdk.deletePost(orbisId),
-      Post.unpublish(id)
+      orbisId && this.orbisSdk.deletePost(orbisId)
+      // Post.unpublish(id)
     ])
   }
 
@@ -186,4 +186,4 @@ class CeramicOrbisClient {
   }
 }
 
-module.exports = { CeramicOrbisClient, Post }
+module.exports = { CeramicOrbisClient }
