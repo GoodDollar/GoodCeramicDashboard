@@ -56,8 +56,7 @@
     "uuid": "55c3fc06-5eaa-4cb9-a0de-6012e3fba0e4"
   },
   "engines": {
-    "node": ">=16",
-    "npm": ">=8"
+    "node": ">=16"
   },
   "license": "MIT",
   "packageManager": "yarn@3.6.1"
