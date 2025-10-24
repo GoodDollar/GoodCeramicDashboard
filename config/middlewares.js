@@ -1,6 +1,15 @@
 module.exports = ({ env }) => {
   const provider = env('UPLOAD_PROVIDER', 'local')
   const limit = env.int('UPLOAD_LIMIT', 200)
+  const allowedOrigins = env.array('CERAMIC_FEED_ALLOWED_ORIGINS', [
+    'http://localhost:1337',
+    'http://127.0.0.1:1337',
+    'http://0.0.0.0:1337',
+    'http://localhost:3000',
+    'https://localhost:3000',
+    'https://localhost:1337',
+    'https://127.0.0.1:1337',
+  ])
   let strapiSecurity = 'strapi::security'
 
   const strapiBody = {
@@ -43,7 +52,22 @@ module.exports = ({ env }) => {
   return [
     'strapi::errors',
     strapiSecurity,
-    'strapi::cors',
+    {
+      name: 'strapi::cors',
+      config: {
+        origin: allowedOrigins,
+        headers: [
+          'Content-Type',
+          'Authorization',
+          'Origin',
+          'Accept',
+          'User-Agent',
+          'Referer',
+        ],
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+        keepHeaderOnError: true,
+      },
+    },
     'strapi::poweredBy',
     'strapi::logger',
     'strapi::query',
