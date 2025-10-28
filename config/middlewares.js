@@ -8,23 +8,23 @@ module.exports = ({ env }) => {
     'http://localhost:3000',
     'https://localhost:3000',
     'https://localhost:1337',
-    'https://127.0.0.1:1337',
+    'https://127.0.0.1:1337'
   ])
   let strapiSecurity = 'strapi::security'
 
   const strapiBody = {
-    name: "strapi::body",
+    name: 'strapi::body',
     config: {
-      formLimit: "256mb", // modify form body
-      jsonLimit: "256mb", // modify JSON body
-      textLimit: "256mb", // modify text body
+      formLimit: '256mb', // modify form body
+      jsonLimit: '256mb', // modify JSON body
+      textLimit: '256mb', // modify text body
       formidable: {
-        maxFileSize: limit * 1024, // multipart data, modify here limit of uploaded file size (in kB)
-      },
-    },
+        maxFileSize: limit * 1024 // multipart data, modify here limit of uploaded file size (in kB)
+      }
+    }
   }
 
-  if ('aws-s3' === provider)  {
+  if ('aws-s3' === provider) {
     const bucket = env('AWS_BUCKET')
     const region = env('AWS_REGION')
 
@@ -42,10 +42,10 @@ module.exports = ({ env }) => {
             'connect-src': ["'self'", 'https:'],
             'img-src': ["'self'", 'data:', 'blob:', ...allowedSource],
             'media-src': ["'self'", 'data:', 'blob:', ...allowedSource],
-            upgradeInsecureRequests: null,
-          },
-        },
-      },
+            upgradeInsecureRequests: null
+          }
+        }
+      }
     }
   }
 
@@ -62,11 +62,11 @@ module.exports = ({ env }) => {
           'Origin',
           'Accept',
           'User-Agent',
-          'Referer',
+          'Referer'
         ],
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
-        keepHeaderOnError: true,
-      },
+        keepHeaderOnError: process.env.NODE_ENV !== 'production'
+      }
     },
     'strapi::poweredBy',
     'strapi::logger',
@@ -74,6 +74,6 @@ module.exports = ({ env }) => {
     strapiBody,
     'strapi::session',
     'strapi::favicon',
-    'strapi::public',
-  ];
+    'strapi::public'
+  ]
 }
