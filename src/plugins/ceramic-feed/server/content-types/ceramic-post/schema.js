@@ -31,6 +31,11 @@ module.exports = {
       required: true,
       configurable: false
     },
+    context: {
+      type: 'string',
+      required: false,
+      configurable: false
+    },
     picture: {
       type: 'media',
       multiple: false,
