@@ -1,16 +1,7 @@
 'use strict'
 
 const { PolicyError } = require('@strapi/utils').errors
-
-const DEFAULT_ALLOWLIST = [
-  'http://localhost:3000',
-  'http://localhost:1337',
-  'http://127.0.0.1:1337',
-  'http://0.0.0.0:1337',
-  'https://localhost:3000',
-  'https://localhost:1337',
-  'https://127.0.0.1:1337'
-]
+const { DEFAULT_ALLOWED_ORIGINS } = require('../config/defaults')
 
 const getHeader = (ctx, name) => {
   const headers = ctx.request?.headers
@@ -41,10 +32,13 @@ const getOriginFromHeaders = ctx => {
   }
 }
 
-module.exports = (policyContext, policyConfig, { strapi }) => {
+const allowlistPolicy = (policyContext, policyConfig, { strapi }) => {
   const allowed =
     policyConfig?.origins ??
-    strapi.config.get('plugin.ceramic-feed.allowedOrigins', DEFAULT_ALLOWLIST)
+    strapi.config.get(
+      'plugin.ceramic-feed.allowedOrigins',
+      DEFAULT_ALLOWED_ORIGINS
+    )
 
   const requestOrigin = getOriginFromHeaders(policyContext)
 
@@ -60,3 +54,5 @@ module.exports = (policyContext, policyConfig, { strapi }) => {
     `Origin "${requestOrigin}" not allowed for posts endpoint`
   )
 }
+
+module.exports = allowlistPolicy
