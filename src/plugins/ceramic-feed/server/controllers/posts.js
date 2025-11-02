@@ -98,7 +98,7 @@ module.exports = {
 
     ctx.set(
       'Cache-Control',
-      'public, max-age=60, s-maxage=300, stale-while-revalidate=300'
+      'public, max-age=3600, s-maxage=3600, stale-while-revalidate=3600'
     )
     ctx.set('Vary', 'Origin')
     ctx.body = {
