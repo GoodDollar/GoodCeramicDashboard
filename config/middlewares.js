@@ -1,21 +1,29 @@
+const {
+  DEFAULT_ALLOWED_ORIGINS
+} = require('../src/plugins/ceramic-feed/server/config/defaults')
+
 module.exports = ({ env }) => {
   const provider = env('UPLOAD_PROVIDER', 'local')
   const limit = env.int('UPLOAD_LIMIT', 200)
+  const allowedOrigins = env.array(
+    'CERAMIC_FEED_ALLOWED_ORIGINS',
+    DEFAULT_ALLOWED_ORIGINS
+  )
   let strapiSecurity = 'strapi::security'
 
   const strapiBody = {
-    name: "strapi::body",
+    name: 'strapi::body',
     config: {
-      formLimit: "256mb", // modify form body
-      jsonLimit: "256mb", // modify JSON body
-      textLimit: "256mb", // modify text body
+      formLimit: '256mb', // modify form body
+      jsonLimit: '256mb', // modify JSON body
+      textLimit: '256mb', // modify text body
       formidable: {
-        maxFileSize: limit * 1024, // multipart data, modify here limit of uploaded file size (in kB)
-      },
-    },
+        maxFileSize: limit * 1024 // multipart data, modify here limit of uploaded file size (in kB)
+      }
+    }
   }
 
-  if ('aws-s3' === provider)  {
+  if ('aws-s3' === provider) {
     const bucket = env('AWS_BUCKET')
     const region = env('AWS_REGION')
 
@@ -33,23 +41,38 @@ module.exports = ({ env }) => {
             'connect-src': ["'self'", 'https:'],
             'img-src': ["'self'", 'data:', 'blob:', ...allowedSource],
             'media-src': ["'self'", 'data:', 'blob:', ...allowedSource],
-            upgradeInsecureRequests: null,
-          },
-        },
-      },
+            upgradeInsecureRequests: null
+          }
+        }
+      }
     }
   }
 
   return [
     'strapi::errors',
     strapiSecurity,
-    'strapi::cors',
+    {
+      name: 'strapi::cors',
+      config: {
+        origin: allowedOrigins,
+        headers: [
+          'Content-Type',
+          'Authorization',
+          'Origin',
+          'Accept',
+          'User-Agent',
+          'Referer'
+        ],
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+        keepHeaderOnError: process.env.NODE_ENV !== 'production'
+      }
+    },
     'strapi::poweredBy',
     'strapi::logger',
     'strapi::query',
     strapiBody,
     'strapi::session',
     'strapi::favicon',
-    'strapi::public',
-  ];
+    'strapi::public'
+  ]
 }

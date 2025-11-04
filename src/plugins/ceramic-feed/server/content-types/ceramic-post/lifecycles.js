@@ -60,6 +60,9 @@ const LifecycleHooks = new (class {
     const { _callCeramic, entityService } = this
 
     const { cid, orbisId, publishedAt, updatedAt } = entity
+    const pluginConfig = this.strapi.config.get('plugin.ceramic-feed', {})
+    const entityContext = entity.context?.trim() || null
+    const resolvedContext = entityContext || pluginConfig.orbisContext || null
     const published =
       publishedAt instanceof Date ? publishedAt.toISOString() : publishedAt
     const updated =
@@ -71,6 +74,12 @@ const LifecycleHooks = new (class {
       published,
       updated
     }))
+    payload.context = resolvedContext
+
+    const updateData = {}
+    if (resolvedContext !== entity.context) {
+      updateData.context = resolvedContext
+    }
 
     console.log('onPublish payload:', payload)
     // if Ceramic ID was set - update doc (with latest data)
@@ -85,7 +94,10 @@ const LifecycleHooks = new (class {
         const data = await _callCeramic(async ceramic =>
           ceramic.syncOrbis(payload)
         )
-        entityService.update(POSTS, entity.id, { data })
+        assign(updateData, data)
+      }
+      if (!isEmpty(updateData)) {
+        await entityService.update(POSTS, entity.id, { data: updateData })
       }
       return
     }
@@ -95,7 +107,11 @@ const LifecycleHooks = new (class {
     const data = await _callCeramic(async ceramic =>
       ceramic.createAndPublish(payload)
     )
-    entityService.update(POSTS, entity.id, { data })
+    assign(updateData, data)
+
+    if (!isEmpty(updateData)) {
+      await entityService.update(POSTS, entity.id, { data: updateData })
+    }
   }
 
   async onBulkUpdate(event) {

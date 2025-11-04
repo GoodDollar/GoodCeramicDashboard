@@ -46,6 +46,20 @@ module.exports = {
         sortable: false
       }
     },
+    context: {
+      edit: {
+        label: 'Orbis context',
+        description: 'Optional context override used by downstream feeds',
+        placeholder: '',
+        visible: true,
+        editable: true
+      },
+      list: {
+        label: 'Orbis context',
+        searchable: true,
+        sortable: true
+      }
+    },
     picture: {
       edit: {
         label: 'Landing picture',

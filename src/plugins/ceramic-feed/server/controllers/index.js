@@ -1,3 +1,7 @@
 'use strict';
 
-module.exports = {};
+const posts = require('./posts');
+
+module.exports = {
+  posts,
+};
