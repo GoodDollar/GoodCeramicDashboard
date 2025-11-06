@@ -1,4 +1,4 @@
-'use strict';
+'use strict'
 
 const DEFAULT_ALLOWED_ORIGINS = [
   'http://localhost:3000',
@@ -11,8 +11,11 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'https://goodwallet.xyz',
   'https://gooddollar.org',
   'https://gooddapp.org',
-];
+  'https://goodceramic-dev.herokuapp.com',
+  'https://goodceramic-qa.herokuapp.com/',
+  'https://goodceramic-next.herokuapp.com'
+]
 
 module.exports = {
-  DEFAULT_ALLOWED_ORIGINS,
-};
+  DEFAULT_ALLOWED_ORIGINS
+}
