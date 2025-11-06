@@ -15,9 +15,10 @@ module.exports = {
       'ORBIS_FEED_CONTEXT',
       'kjzl6cwe1jw147bfd2hn7f3j2sdsq6708xnb3a217iz1m18a35v25kgxna3s0os'
     ),
-    allowedOrigins: env.array('CERAMIC_FEED_ALLOWED_ORIGINS', [
+    allowedOrigins: env.array(
+      'CERAMIC_FEED_ALLOWED_ORIGINS',
       DEFAULT_ALLOWED_ORIGINS
-    ])
+    )
   }),
   validator(config) {
     const mandatoryOptions = [
