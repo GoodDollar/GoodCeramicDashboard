@@ -29,7 +29,8 @@ module.exports = ({ env }) => {
 
     const allowedSource = [
       `https://${bucket}.s3.amazonaws.com`,
-      `https://${bucket}.s3.${region}.amazonaws.com`
+      `https://${bucket}.s3.${region}.amazonaws.com`,
+      `${env('AWS_ENDPOINT')}`
     ]
 
     strapiSecurity = {

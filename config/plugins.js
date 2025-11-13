@@ -3,15 +3,17 @@ const providerFactories = {
     sizeLimit: env.int('UPLOAD_SIZE_LIMIT', 100000),
     localServer: {
       maxage: env.int('UPLOAD_MAXAGE', 300000)
-    },
+    }
   }),
   'aws-s3': env => ({
     accessKeyId: env('AWS_ACCESS_KEY_ID'),
     secretAccessKey: env('AWS_ACCESS_SECRET'),
     region: env('AWS_REGION'),
+    endpoint: env('AWS_ENDPOINT'),
+    s3ForcePathStyle: true,
     params: {
-      Bucket: env('AWS_BUCKET'),
-    },
+      Bucket: env('AWS_BUCKET')
+    }
   })
 }
 
@@ -40,10 +42,16 @@ module.exports = ({ env }) => {
       enabled: true,
       resolve: './src/plugins/ceramic-feed',
       config: {
-        web3storageGateway: env('WEB3STORAGE_GATEWAY', 'https://ipfsgateway.goodworker.workers.dev'),
-        ceramicNodeURL: env('CERAMIC_NODE_URL', 'https://ceramic-clay.3boxlabs.com'),
-        ceramicDIDSeed: env('CERAMIC_DID_SEED'),
-      },
-    },
+        web3storageGateway: env(
+          'WEB3STORAGE_GATEWAY',
+          'https://ipfsgateway.goodworker.workers.dev'
+        ),
+        ceramicNodeURL: env(
+          'CERAMIC_NODE_URL',
+          'https://ceramic-clay.3boxlabs.com'
+        ),
+        ceramicDIDSeed: env('CERAMIC_DID_SEED')
+      }
+    }
   }
 }
