@@ -46,7 +46,7 @@ const allowlistPolicy = (policyContext, policyConfig, { strapi }) => {
     return false
   }
 
-  if (allowed.includes(requestOrigin)) {
+  if (allowed.includes('*') || allowed.includes(requestOrigin)) {
     return true
   }
 
